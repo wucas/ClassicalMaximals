@@ -3,6 +3,7 @@
 Translation of magma `ClassicalMaximals` to GAP.
 Resources:
 - [ssiccha/maxtrans](https://github.com/ssiccha/maxtrans)
+- [hulpke/mgmconvert](https://github.com/hulpke/mgmconvert/)
 
 
 ## Contact
