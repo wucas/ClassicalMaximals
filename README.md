@@ -1,17 +1,19 @@
 # The GAP package ClassicalMaximals
 
-TODO: add a description of your package; perhaps also instructions how how to
-install and use it, resp. where to find out more
+Translation of magma `ClassicalMaximals` to GAP.
+Resources:
+- [ssiccha/maxtrans](https://github.com/ssiccha/maxtrans)
 
 
 ## Contact
 
-TODO: add info on how to contact you and/or how to report issues with your
-package
+To report issues confer to our
+[issue tracker](https://github.com/ssiccha/ClassicalMaximals/issues)
+or send an email to `siccha@mathematik.uni-kl.de`.
 
 ## License
 
-TODO: Provide information on the license of your package. A license is
-important as it determines who has a right to distribute your package. The
-"default" license to consider is GNU General Public License v2 or later, as
-that is the license of GAP itself.
+ClassicalMaximals is free software; you can redistribute and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your opinion) any later version. For more information see the `LICENSE` file.
