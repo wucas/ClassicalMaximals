@@ -6,14 +6,20 @@
 #! ClassicalMaximals is a package which does some
 #! interesting and cool things
 #!
-#! @Chapter Functionality
-#!
-#!
-#! @Section Example Methods
-#!
-#! This section will describe the example
-#! methods of ClassicalMaximals
+#! @Chapter Maximal Subgroups of Classical Groups
+#! @Section The Main function
 
+#! @Arguments type, n, q
 #! @Description
-#!   Insert documentation for your function here
-DeclareGlobalFunction( "ClassicalMaximals_Example" );
+#! Return ...
+#! The main function..
+# gap-system/gap has a ClassicalMaximals function. That one should be renamed
+# to something like ClassicalMaximalsFromStoredData, then here we could drop
+# the -Generic suffix
+DeclareGlobalFunction("ClassicalMaximalsGeneric");
+
+#! @Arguments n, q
+#! @Description
+#! TODO
+DeclareGlobalFunction("MaximalSubgroupClassRepsSpecialLinearGroup");
+
