@@ -362,3 +362,16 @@ function(epsilon, n, q)
     
     return rec(generatorsOfSO := generatorsOfSO, D := D, E := E);
 end);
+
+InstallGlobalFunction("MatrixGroup",
+function(gens, F)
+    return Group(List(gens, g -> ImmutableMatrix(F, g));
+end);
+
+InstallGlobalFunction("MatrixGroupWithSize",
+function(gens, F, size)
+    local result;
+    result := MatrixGroup(gens, F);
+    SetSize(result, size);
+    return result;
+end);
