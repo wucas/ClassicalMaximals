@@ -1,3 +1,7 @@
+# If <group> preserves a sesquilinear form of type <type> (one of "S", "U",
+# "O"), return a group conjugate to <group> preserving the form of that type
+# given by <gramMatrix>.
+#
 # If <type> = "S" or type = "O" then <group> must have the attribute
 # InvariantBilinearForm.
 # Also, one need to ensure that the attribute DefaultFieldOfMatrixGroup is set
@@ -48,6 +52,10 @@ function(group, type, gramMatrix)
     return result;
 end);
 
+# If <group> preserves a sesquilinear form of type <type> (one of "S", "U", "O"
+# (in odd dimension), "O+" or "O-" (both in even dimension), return a group
+# conjugate to <group> preserving the standard form of that type.
+#
 # Can only deal with sesquilinear forms, not with quadratic forms as of yet.
 # If <type> is one of "S", "O+", "O-" or "O" then <group> must have the
 # attribute InvariantBilinearForm.
@@ -111,10 +119,11 @@ function(group, type)
 end);
 
 
-ConjugateModule := function(M, q)
+BindGlobal("ConjugateModule",
+function(M, q)
   return GModuleByMats(List(MTX.Generators(M), A -> ApplyFunctionToEntries(A, x -> x ^ q)), 
                        MTX.Field(M));
-end;
+end);
 
 # Assuming that the group G acts absolutely irreducibly, try to find a unitary
 # form which is G-invariant or prove that no such form exists.
