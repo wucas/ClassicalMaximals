@@ -827,3 +827,17 @@ function(n, q, classes...)
 
     return maximalSubgroups;
 end);
+
+
+BindGlobal("C1SubgroupsSymplecticGroupGeneric",
+function(n, q)
+    local listOfks, result;
+    listOfks := [1..QuoInt(n, 2) - 1];
+    # type P_k subgroups
+    result := List(listOfks, k -> SpStabilizerOfIsotropicSubspace(n, q, k));
+    # type Sp(k, q) _|_ Sp(n - k, q) subgroups
+    result := Concatenation(result, 
+                            List(listOfks, 
+                                k -> SpStabilizerOfNonDegenerateSubspace(n, q, k)));
+    return result;
+end);
