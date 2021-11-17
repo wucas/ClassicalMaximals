@@ -889,6 +889,28 @@ function(n, q)
     return result;
 end);
 
+BindGlobal("C3SubgroupsSymplecticGroupGeneric",
+function(n, q)
+    local primeDivisorsOfn, s, result;
+
+    primeDivisorsOfn := PrimeDivisors(n);
+    result := [];
+
+    # symplectic type subgroups
+    for s in primeDivisorsOfn do
+        if IsEvenInt(n / s) then
+            Add(result, SymplecticSemilinearSp(n, q, s));
+        fi;
+    od;
+
+    # unitary type subgroups
+    if IsEvenInt(n) then
+        Add(result, UnitarySemilinearSp(n, q));
+    fi;
+
+    return result;
+end);
+
 BindGlobal("C4SubgroupsSymplecticGeneric",
 function(n, q)
     local result, l, halfOfEvenFactorsOfn, n_1, n_2;
