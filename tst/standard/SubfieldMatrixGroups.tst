@@ -76,4 +76,28 @@ gap> ForAll(testsOrthogonalSubfieldSU, TestOrthogonalSubfieldSU);
 true
 
 #
+gap> TestSubfieldSp := function(args)
+>   local n, p, e, f, G, hasSize;
+>   n := args[1];
+>   p := args[2];
+>   e := args[3];
+>   f := args[4];
+>   G := SubfieldSp(n, p, e, f);
+>   hasSize := HasSize(G);
+>   RECOG.TestGroup(G, false, Size(G));
+>   return IsSubset(Sp(n, p ^ e), GeneratorsOfGroup(G))
+>          and DefaultFieldOfMatrixGroup(G) = GF(p ^ e)
+>          and hasSize;
+> end;;
+gap> testsSubfieldSp := [[6, 2, 2, 1], [4, 3, 2, 1], [4, 3, 4, 2], [4, 7, 2, 1]];;
+gap> ForAll(testsSubfieldSp, TestSubfieldSp);
+true
+gap> SubfieldSp(3, 2, 2, 1);
+Error, <d> must be even.
+gap> SubfieldSp(4, 2, 1, 2);
+Error, <f> must be a divisor of <e>.
+gap> SubfieldSp(4, 2, 4, 1);
+Error, the quotient of <f> by <e> must be a prime.
+
+#
 gap> STOP_TEST("SubfieldMatrixGroups.tst", 0);

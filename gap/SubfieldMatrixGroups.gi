@@ -288,3 +288,49 @@ function(epsilon, d, q)
  
     return result;
 end);
+
+
+# Construction as in Proposition 8.2 of [HR05]
+BindGlobal("SubfieldSp",
+function (d, p, e, f)
+    local F, q0, b, gens, l, zeta, omega, zetaPower, C, gen;
+
+    if IsOddInt(d) then
+    	ErrorNoReturn("<d> must be even.");
+    fi;
+
+    if e mod f <> 0 then
+        ErrorNoReturn("<f> must be a divisor of <e>.");
+    fi;
+
+    b := QuoInt(e, f);
+
+    if not IsPrime(b) then
+        ErrorNoReturn("the quotient of <f> by <e> must be a prime.");
+    fi;
+
+    F := GF(p ^ e);
+    q0 := p ^ f;
+    gens := List(GeneratorsOfGroup(Sp(d, q0)));
+
+    # In this case the embedding of Sp(d, q0) in Sp(d, q) is already
+    # the C5-subgroup, so we just need to adjust the base field.
+    if Gcd(2, b, p - 1) = 1 then
+        return MatrixGroupWithSize(F, gens, SizeSp(d, q0));
+    fi;
+
+    l := QuoInt(d, 2);
+    zeta := PrimitiveElement(F);
+    omega := PrimitiveElement(GF(q0));
+    zetaPower := zeta ^ - QuoInt(q0 + 1, 2);
+
+    # This matrix C preserves the form and is constructed to
+    # have determinant 1, but it is not in Sp(d, q0). Therefore it is
+    # our missing generator to extend Sp(d, q0) to a C5-subgroup, since
+    # C is in the normalizer of Sp(d, q0) in Sp(d, q).
+    C := DiagonalMat(Concatenation(ListWithIdenticalEntries(l, omega * zetaPower), ListWithIdenticalEntries(l, zetaPower)));
+    Add(gens, C);
+
+    # Size according to Table 2.8 in [BHR13]
+    return MatrixGroupWithSize(F, gens, SizeSp(d, q0) * 2);
+end);

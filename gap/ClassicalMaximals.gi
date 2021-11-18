@@ -943,6 +943,19 @@ function(n, q)
     return result;
 end);
 
+BindGlobal("C5SubgroupsSymplecticGroupGeneric",
+function(n, q)
+    local factorisation, p, e, degreeOfExtension, result;
+    
+    factorisation := PrimePowersInt(q);
+    p := factorisation[1];
+    e := factorisation[2];
+
+    # For each prime divisor of e, there is exactly one of these subgroups,
+    # so this is sufficient.
+    return List(PrimeDivisors(e), b -> SubfieldSp(n, p, e, QuoInt(e, b)));
+end);
+
 BindGlobal("C6SubgroupsSymplecticGroupGeneric",
 function(n, q)
     local factorisationOfq, p, e, factorisationOfn, r, m, result,
