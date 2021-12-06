@@ -9,11 +9,11 @@ gap> SymmetricBilinearForm(SO(5, 9)) = InvariantBilinearForm(SO(5, 9)).matrix;
 true
 gap> ConjugateToSesquilinearForm(SL(3, 4), "U", AntidiagonalMat(3, GF(4)));
 Error, No preserved unitary form found for <group>
-gap> ConjugateToSesquilinearForm(SL(3, 5), "O", IdentityMat(3, GF(5)));
+gap> ConjugateToSesquilinearForm(SL(3, 5), "O-B", IdentityMat(3, GF(5)));
 Error, No preserved symmetric bilinear form found for <group>
 gap> TestFormChangingFunctions := function(args)
 >   local n, q, type, gramMatrix, standardGroup, conjugatedGroup, broadType,
->   standardGramMatrix, twiceConjugatedGroup;
+>   standardGramMatrix, twiceConjugatedGroup, polarForm, standardPolarForm;
 >   n := args[1];
 >   q := args[2];
 >   type := args[3];
@@ -23,14 +23,18 @@ gap> TestFormChangingFunctions := function(args)
 >   elif type = "S" then
 >       standardGroup := Sp(n, q);
 >   elif type = "O" then
->       standardGroup := SO(n, q);
+>       standardGroup := Omega(n, q);
 >   elif type = "O+" then
->       standardGroup := SO(1, n, q);
+>       standardGroup := Omega(1, n, q);
 >   elif type = "O-" then
->       standardGroup := SO(-1, n, q);
+>       standardGroup := Omega(-1, n, q);
 >   fi;
 >   if type in ["O", "O+", "O-"] then
->       broadType := "O";
+>       if IsOddInt(q) then
+>           broadType := "O-B";
+>       else
+>           broadType := "O-Q";
+>       fi;
 >   else
 >       broadType := type;
 >   fi;
@@ -42,8 +46,13 @@ gap> TestFormChangingFunctions := function(args)
 >   fi;
 >   if type = "U" then
 >       standardGramMatrix := InvariantSesquilinearForm(standardGroup).matrix;
->   else
+>   elif IsOddInt(q) then
 >       standardGramMatrix := InvariantBilinearForm(standardGroup).matrix;
+>   else
+>       SetInvariantQuadraticForm(conjugatedGroup, rec(matrix := gramMatrix));
+>       polarForm := gramMatrix + TransposedMat(gramMatrix);
+>       standardGramMatrix := InvariantQuadraticForm(standardGroup).matrix;
+>       standardPolarForm := InvariantBilinearForm(standardGroup).matrix;
 >   fi;
 >   twiceConjugatedGroup := ConjugateToStandardForm(conjugatedGroup, type);
 >   if type = "U" then
@@ -51,11 +60,20 @@ gap> TestFormChangingFunctions := function(args)
 >                     g -> g * gramMatrix * HermitianConjugate(g, q) = gramMatrix)
 >              and ForAll(GeneratorsOfGroup(twiceConjugatedGroup), 
 >                         g -> g * standardGramMatrix * HermitianConjugate(g, q) = standardGramMatrix);
->   else
+>   elif IsOddInt(q) then
 >       return ForAll(GeneratorsOfGroup(conjugatedGroup),
 >                     g -> g * gramMatrix * TransposedMat(g) = gramMatrix)
 >              and ForAll(GeneratorsOfGroup(twiceConjugatedGroup),
 >                         g -> g * standardGramMatrix * TransposedMat(g) = standardGramMatrix);
+>   else
+>       return ForAll(GeneratorsOfGroup(conjugatedGroup), 
+>                     g -> (g * polarForm * TransposedMat(g) = polarForm 
+>                           and DiagonalOfMat(g * gramMatrix * TransposedMat(g)) 
+>                               = DiagonalOfMat(gramMatrix)))
+>              and ForAll(GeneratorsOfGroup(twiceConjugatedGroup),
+>                         g -> (g * standardPolarForm * TransposedMat(g) = standardPolarForm
+>                               and DiagonalOfMat(g * standardGramMatrix * TransposedMat(g)) 
+>                                   = DiagonalOfMat(standardGramMatrix)));
 >   fi;
 > end;;
 gap> testsFormChangingFunctions := [[3, 7, "U", IdentityMat(3, GF(7))],
@@ -65,7 +83,9 @@ gap> testsFormChangingFunctions := [[3, 7, "U", IdentityMat(3, GF(7))],
 >                                   [4, 7, "O-", Z(7) ^ 0 * DiagonalMat([Z(7), 1, 1, 1])],
 >                                   [6, 7, "O-", IdentityMat(6, GF(7))],
 >                                   [1, 5, "O", IdentityMat(1, GF(5))],
->                                   [1, 5, "O", Z(5) * IdentityMat(1, GF(5))]];;
+>                                   [1, 5, "O", Z(5) * IdentityMat(1, GF(5))],
+>                                   [2, 2, "O-", Z(2) ^ 0 * [[1, 1], [0, 1]]],
+>                                   [6, 4, "O+", AntidiagonalMat(Z(4) ^ 0 * [1, 1, 1, 0, 0, 0], GF(4))]];;
 gap> ForAll(testsFormChangingFunctions, TestFormChangingFunctions);
 true
 
