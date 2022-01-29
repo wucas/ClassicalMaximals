@@ -568,3 +568,45 @@ function(d, q)
     # Conjugate the result so that it preserves the standard symplectic form 
     return ConjugateToStandardForm(result, "S");
 end);
+
+# For a quadratic form Q on the vector space GF(q ^ s) ^ (d / s) given 
+# by the Gram matrix <form>, we can interpret any v in GF(q) ^ d as an element of 
+# GF(q ^ s) ^ (d / s) via the standard basis. Taking the trace of Q(v)
+# yields a quadratic form Q' on the vector space GF(q) ^ d. Furthermore, if
+# beta is the polar form of Q, then the polar form beta' of Q' is given by
+# beta'(u, v) = Tr(beta(u, v)), where u, v are again to be interpreted as
+# elements of GF(q ^ s) ^ (d / s) on the right-hand side.
+#
+# Note that we assume that <form> is an upper-triangular matrix.
+BindGlobal("TakeTraceOfQuadraticForm",
+function(form, q, s)
+    local F, d, newForm, B, i, j, eiOverGFqsEntry, eiOverGFqsIndex,
+    ejOverGFqsEntry, ejOverGFqsIndex, valueOfPolarForm, valueOfQuadraticForm;
+
+    F := GF(q);
+    d := s * Size(form);
+    newForm := NullMat(d, d, F);
+    B := CanonicalBasis(AsField(F, GF(q ^ s)));
+
+    for i in [1..d] do
+        # The basis vector ei of GF(q) ^ d corresponds to a vector in 
+        # GF(q ^ s) ^ (d / s) with the entry eiOverGFqsEntry in the 
+        # eiOverGFqsIndex-th component.
+        eiOverGFqsEntry := B[(i - 1) mod s + 1];
+        eiOverGFqsIndex := QuoInt(i - 1, s) + 1;
+
+        for j in [i + 1..d] do
+            ejOverGFqsEntry := B[(j - 1) mod s + 1];
+            ejOverGFqsIndex := QuoInt(j - 1, s) + 1;
+
+            valueOfPolarForm := eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex] 
+                                                * ejOverGFqsEntry;
+            newForm[i, j] := TraceOverFiniteField(valueOfPolarForm, q, s);
+        od;
+
+        valueOfQuadraticForm := eiOverGFqsEntry ^ 2 * form[eiOverGFqsIndex, eiOverGFqsIndex];
+        newForm[i, i] := TraceOverFiniteField(valueOfQuadraticForm, q, s);
+    od; 
+
+    return newForm;
+end);
