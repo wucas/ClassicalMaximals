@@ -354,6 +354,15 @@ function(epsilon, n, q)
     return QuoInt(SizeGO(epsilon, n, q), Gcd(2, q - 1));
 end);
 
+# Compute the size of Omega(epsilon, n, q) according to Table 1.3 in [BHR13]
+InstallGlobalFunction("SizeOmega",
+function(epsilon, n, q)
+    if IsOddInt(n) and IsEvenInt(q) then
+        return SizeSO(epsilon, n, q);
+    fi;
+    return QuoCeil(SizeSO(epsilon, n, q), 2);
+end);
+
 # Return the matrix corresponding to the reflection in the vector <v> of the 
 # space GF(q) ^ n equipped with the bilinear or quadratic form given by the 
 # argument <gramMatrix>, depending on whether type = "B" or type = "Q".

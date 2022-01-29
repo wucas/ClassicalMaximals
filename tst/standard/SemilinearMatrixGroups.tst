@@ -58,4 +58,20 @@ gap> TestMatricesInducingGaloisGroupOfGFQToSOverGFQ(5, 3);
 gap> TestMatricesInducingGaloisGroupOfGFQToSOverGFQ(4, 3);
 
 #
+gap> TestGammaLMeetOmega := function(epsilon, d, q, s)
+>   local G;
+>   G := GammaLMeetOmega(epsilon, d, q, s);
+>   Assert(0, IsSubsetOmega(epsilon, d, q, G));
+>   Assert(0, CheckSize(G));
+> end;;
+gap> TestGammaLMeetOmega(0, 9, 7, 3);
+gap> TestGammaLMeetOmega(0, 15, 3, 3);
+gap> TestGammaLMeetOmega(0, 15, 3, 5);
+gap> TestGammaLMeetOmega(1, 12, 3, 3);
+gap> TestGammaLMeetOmega(1, 12, 5, 3);
+gap> TestGammaLMeetOmega(1, 20, 3, 5);
+gap> TestGammaLMeetOmega(-1, 12, 3, 3);
+gap> TestGammaLMeetOmega(-1, 12, 5, 3);
+
+#
 gap> STOP_TEST("SemilinearMatrixGroups.tst", 0);

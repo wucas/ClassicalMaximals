@@ -48,3 +48,4 @@ DeclareGlobalFunction("SizePSU");
 DeclareGlobalFunction("SizeGU");
 DeclareGlobalFunction("SizeGO");
 DeclareGlobalFunction("SizeSO");
+DeclareGlobalFunction("SizeOmega");

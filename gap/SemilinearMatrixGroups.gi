@@ -598,9 +598,14 @@ function(form, q, s)
         for j in [i + 1..d] do
             ejOverGFqsEntry := B[(j - 1) mod s + 1];
             ejOverGFqsIndex := QuoInt(j - 1, s) + 1;
-
-            valueOfPolarForm := eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex] 
-                                                * ejOverGFqsEntry;
+            
+            if eiOverGFqsIndex <> ejOverGFqsIndex then
+                valueOfPolarForm := eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex] 
+                                                    * ejOverGFqsEntry;
+            else
+                valueOfPolarForm := 2 * eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex]
+                                                        * ejOverGFqsEntry;
+            fi;
             newForm[i, j] := TraceOverFiniteField(valueOfPolarForm, q, s);
         od;
 
@@ -609,4 +614,61 @@ function(form, q, s)
     od; 
 
     return newForm;
+end);
+
+# Construction as in Lemma 6.3 of [HR10]
+BindGlobal("GammaLMeetOmega",
+function(epsilon, d, q, s)
+    local F, gammaL1, gammaA, gammaB, Q, conjugatedOmega, zeta, AandB, size, C,
+    result, formMatrix;
+    
+    if d mod s <> 0 or not IsPrime(s) then
+        ErrorNoReturn("<s> must be a prime divisor of <d>");
+    elif s = 2 then
+        ErrorNoReturn("<s> must be odd");
+    fi;
+
+    if d / s < 3 then 
+        ErrorNoReturn("<d> / <s> must be at least 3");
+    fi;
+
+    if not epsilon in [-1, 0, 1] then
+        ErrorNoReturn("<epsilon> must be one of -1, 0, 1");
+    elif epsilon = 0 and IsEvenInt(d) then
+        ErrorNoReturn("<epsilon> cannot be zero if <d> is even");
+    elif epsilon <> 0 and IsOddInt(d) then
+        ErrorNoReturn("<epsilon> must be zero if <d> is odd");
+    fi;
+
+    F := GF(q);
+    gammaL1 := MatricesInducingGaloisGroupOfGFQToSOverGFQ(s, q);
+    gammaA := gammaL1.A;
+    # By Lemma 6.2 of [HR05], det(Bs) = (-1) ^ (s - 1) = 1.
+    gammaB := gammaL1.B;
+
+    Q := StandardOrthogonalForm(epsilon, d / s, q).Q;
+    conjugatedOmega := ConjugateToSesquilinearForm(Omega(epsilon, d / s, q ^ s), "O-Q", Q);
+    zeta := PrimitiveElement(GF(q ^ s));
+    # These matrices generate a group isomorphic to Omega(epsilon, d / s, q ^ s) 
+    # as a subgroup of Omega(epsilon, d, q)
+    AandB := List(GeneratorsOfGroup(conjugatedOmega), g -> MapGammaLToGL(g, gammaA, zeta));
+
+    # C has order s
+    C := MatrixByBlockMatrix(BlockMatrix(List([1..d / s], i -> [i, i, gammaB]), d / s, d / s));
+
+    # Size according to Table 2.6 of [BHR13]
+    size := SizeOmega(epsilon, d / s, q ^ s) * s;
+    result := MatrixGroupWithSize(F, Concatenation(AandB, [C]), size);
+
+    # The constructed group preserves the quadratic form given by <formMatrix>
+    formMatrix := TakeTraceOfQuadraticForm(Q, q, s);
+    SetInvariantQuadraticFormFromMatrix(result, formMatrix);
+    
+    if epsilon = 0 then
+        return ConjugateToStandardForm(result, "O");
+    elif epsilon = 1 then
+        return ConjugateToStandardForm(result, "O+");
+    elif epsilon = -1 then
+        return ConjugateToStandardForm(result, "O-");
+    fi;
 end);
