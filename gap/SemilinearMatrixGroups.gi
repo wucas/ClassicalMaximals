@@ -766,7 +766,7 @@ function(d, q)
             # TODO Why is this true???
             D := GeneralUnitaryGroupGens(d / 2, q, xi)[1];
             D := MapGammaLToGLRatFun(D, gammaA);
-            Assert(FancySpinorNorm(formMatrix, F, C * D) = 1;
+            Assert(FancySpinorNorm(formMatrix, F, C * D)) = 1;
             Add(generators, C * D);
         fi;
     fi;
