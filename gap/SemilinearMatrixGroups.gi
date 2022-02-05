@@ -672,3 +672,120 @@ function(epsilon, d, q, s)
         return ConjugateToStandardForm(result, "O-");
     fi;
 end);
+
+# Let k be a unitary form over GF(q ^ 2) ^ (d / 2). We can consider a vector v
+# in GF(q) ^ d as an element of GF(q ^ 2) ^ (d / 2) via the standard basis of
+# GF(q ^ 2) over GF(q). Then Q(v) = k(v, v) defines a quadratic form Q on
+# GF(q) ^ d. 
+#
+# Return the Gram matrix of the quadratic form Q given the Gram matrix
+# <form> of the unitary form k.
+BindGlobal("UnitaryFormToQuadraticForm",
+function(form, q)
+    local F, d, newForm, B, i, eiOverGFqsEntry, eiOverGFqsIndex, j,
+    ejOverGFqsEntry, ejOverGFqsIndex, valueOfPolarForm, valueOfQuadraticForm;
+
+    F := GF(q);
+    d := NrRows(form) * 2;
+    
+    newForm := NullMat(d, d, F);
+    B := CanonicalBasis(AsField(F, GF(q ^ 2)));
+
+    for i in [1..d] do
+        # The basis vector ei of GF(q) ^ d corresponds to a vector in 
+        # GF(q ^ s) ^ (d / s) with the entry eiOverGFqsEntry in the 
+        # eiOverGFqsIndex-th component.
+        eiOverGFqsEntry := B[(i - 1) mod 2 + 1];
+        eiOverGFqsIndex := QuoInt(i - 1, 2) + 1;
+
+        for j in [i + 1..d] do
+            ejOverGFqsEntry := B[(j - 1) mod 2 + 1];
+            ejOverGFqsIndex := QuoInt(j - 1, 2) + 1;
+
+            valueOfPolarForm := eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex]
+                                                * ejOverGFqsEntry ^ q;
+
+            newForm[i, j] := TraceOverFiniteField(valueOfPolarForm, q, 2);
+        od;
+
+        valueOfQuadraticForm := eiOverGFqsEntry ^ (q + 1) * form[eiOverGFqsIndex, eiOverGFqsIndex];
+        newForm[i, i] := valueOfQuadraticForm;
+    od; 
+
+    return newForm;
+end);
+
+# Construction as in Lemma 6.5 of [HR10]
+BindGlobal("UnitarySemilinearOmega",
+function(d, q)
+    local F, epsilon, generators, gammaL1, gammaA, gammaB, xi, AandB, B1,
+    unitaryForm, formMatrix, C, D, size, result;
+
+    if IsOddInt(d) then
+        ErrorNoReturn("<d> must be even");
+    fi;
+
+    F := GF(q);
+    epsilon := (-1) ^ (d / 2);
+
+    gammaL1 := MatricesInducingGaloisGroupOfGFQToSOverGFQ(2, q);
+    gammaA := gammaL1.A;
+    gammaB := gammaL1.B;
+
+    xi := Indeterminate(GF(q ^ 2));
+
+    if IsOddInt(q) then
+        # construct 1 / 2 * GU(d / 2, q)
+        AandB := SpecialUnitaryGroupGens(d / 2, q, xi);
+        AandB := List(AandB, g -> MapGammaLToGLRatFun(g, gammaA));
+        # the determinant of B1 is always a (q + 1) / 2 - th root of unity,
+        # i.e. B1 has order (q + 1) / 2 wrt SU(d / 2, q), which is what we want
+        # since [GU : SU] = q + 1
+        B1 := GeneralUnitaryGroupGens(d / 2, q, xi)[1] ^ 2;
+        B1 := MapGammaLToGLRatFun(B1, gammaA);
+        generators := Concatenation(AandB, [B1]);
+    else
+        # construct GU(d / 2, q)
+        AandB := GeneralUnitaryGroupGens(d / 2, q, xi);
+        AandB := List(AandB, g -> MapGammaLToGLRatFun(g, gammaA));
+        generators := AandB;
+    fi; 
+
+    # the constructed group preserves the quadratic form given by <formMatrix>
+    unitaryForm := InvariantSesquilinearForm(GU(d / 2, q)).matrix;
+    formMatrix := UnitaryFormToQuadraticForm(unitaryForm, q);
+
+    if epsilon = 1 then
+        # construct an element of order 2 induced by the Frobenius of GF(q ^ 2)
+        # over GF(q)
+        C := MatrixByBlockMatrix(BlockMatrix(List([1..d / 2], i -> [i, i, gammaB]), d / 2, d / 2));
+        if FancySpinorNorm(formMatrix, F, C) = 1 then
+            Add(generators, C);
+        else
+            # SpinorNorm(D) = -1
+            # TODO Why is this true???
+            D := GeneralUnitaryGroupGens(d / 2, q, xi)[1];
+            D := MapGammaLToGLRatFun(D, gammaA);
+            Assert(FancySpinorNorm(formMatrix, F, C * D) = 1;
+            Add(generators, C * D);
+        fi;
+    fi;
+
+    # Size according to Lemma 6.5 in [HR10]
+    size := 1 / 2 * SizeGU(d / 2, q);
+    if epsilon = 1 then
+        size := 2 * size;
+    fi;
+    if IsEvenInt(q) then
+        size := 2 * size;
+    fi;
+    result := MatrixGroupWithSize(F, generators, size);
+
+    SetInvariantQuadraticFormFromMatrix(result, formMatrix);
+    
+    if epsilon = 1 then
+        return ConjugateToStandardForm(result, "O+");
+    else
+        return ConjugateToStandardForm(result, "O-");
+    fi;
+end);
