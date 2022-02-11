@@ -173,7 +173,6 @@ function(d, q)
     return ConjugateToStandardForm(result, "U");
 end);
 
-
 # Construction as in Proposition 5.2 of [HR05]
 # We stabilise the decomposition with the t summands 
 # < e_1, ..., e_k, f_k, ..., f_1 >,
@@ -271,9 +270,7 @@ function(d, q, t)
         ListWithIdenticalEntries(l, One(field)), ListWithIdenticalEntries(l, -One(field))), field)));
 
     return ConjugateToStandardForm(result, "S");
-
 end);
-
 
 # Construction as in Proposition 5.3 of [HR05]
 # We stabilise the decomposition into the 2 subspaces
@@ -322,5 +319,165 @@ function(d, q)
         ListWithIdenticalEntries(l, One(field)), ListWithIdenticalEntries(l, -One(field))), field)));
 
     return ConjugateToStandardForm(result, "S");
+end);
+
+# Construction as in Lemmata 5.2 and 5.3 of [HR10]
+BindGlobal("OmegaNonDegenerateImprimitives",
+function(epsilon, d, q, epsilon_0, t)
+    local m;
+
+    if epsilon = 0 then
+        if IsEvenInt(d) then
+            ErrorNoReturn("<d> must be odd");
+        fi;
+    elif epsilon in [-1, 1] then
+        if IsOddInt(d) then
+            ErrorNoReturn("<d> must be even");
+        fi;
+    else
+        ErrorNoReturn("<epsilon> must be in [-1, 0, 1]");
+    fi;
+
+    if IsEvenInt(q) and IsOddInt(d) then
+        ErrorNoReturn("<d> must be even if <q> is even");
+    fi;
+
+    if IsEvenInt(q) and IsOddInt(m) then
+        ErrorNoReturn("<m> must be even if <q> is even");
+    fi;
+
+    if d mod t <> 0 then
+        ErrorNoReturn("<t> must be a divisor of <d>");
+    fi;
+
+    m := QuoInt(d, t);
+
+    if IsEvenInt(m) then
+        if epsilon_0 ^ t <> epsilon then
+            ErrorNoReturn("<epsilon_0> ^ t must be equal to epsilon if <d> / <t> is even");
+        fi;
+    elif m <> 1 then
+        if epsilon_0 <> 0 then
+            ErrorNoReturn("<epsilon_0> must be 0 in case <m> > 1 is odd");
+        fi;
+        if IsEvenInt(t) and epsilon <> (-1) ^ (QuoInt((q - 1) * d) 4) then
+            ErrorNoReturn("The form must have square discriminant in case <m> > 1 is odd and <t> is even");
+        fi;
+    fi;
+
+    field := GF(q);
+    one := One(field);
+    gens := [];
+
+    if m = 1 then
+
+        # Construction as in Lemma 5.3 of [HR10]
+
+        if q = 2 or not IsPrimeInt(q) then
+            ErrorNoReturn("<q> must be an odd prime in case <t> = <d>");
+        fi;
+
+        # These two permutation matrices generate the alternating group Alt(t).
+        Add(gens, PermutationMat(CycleFromList([1..2 * QuoInt(t - 1, 2) + 1]), t, q));
+        Add(gens, PermutationMat(CycleFromList([t - 2..t]), t, q));
+
+        Add(gens, DiagonalMat(Concatenation(one * [-1, -1], ListWithIdenticalEntries(t - 2, one))));
+
+        # Size according to Table 2.5 of [BHR13],
+        # we potentially add a factor of 2 below.
+        size := 2 ^ (d - 2) * Factorial(t);
+
+        if q mod 8 in [-1, 1] then
+            # In this case 2 is square by quadratic reciprocity, so one
+            # easily verifies that this matrix has spinor norm 1.
+            Add(gens, PermutationMat((1, 2), t, q) * DiagonalMat(Concatenation(one * [-1], ListWithIdenticalEntries(t - 1, one)));
+            size := size * 2;
+        fi;
+
+        # recall that q is odd
+        Q := IdentityMat(d, field) / 2;
+
+    else
+
+        # Construction as in Lemma 5.2 of [HR10]
+
+        orthogonalGens := StandardGeneratorsOfOrthogonalGroup(epsilon_0, m, q);
+
+        # First we embed Omega(epsilon_0, m, q) into Omega(epsilon, d, q),
+        # then we construct two permutation matrices generatring either the
+        # symmetric group Sym(t) or the alternating group Alt(t) in order to
+        # permute the m-decomposition accordingly.
+        for OmegaGen in orthogonalGens.generatorsOfOmega do
+            A := IdentityMat(d, field);
+            A{[1..m]}{[1..m]} := OmegaGen;
+            Add(gens, A);
+        od;
+
+        if IsEvenInt(q) then
+
+            # In this case, we always generate Sym(t). Notice that m must be
+            # even here, so the rank of all permutation matrices is even and
+            # therefore the spinor norm is 1 on Sym(t).
+
+            # This is a transposition matrix
+            T := ZeroMutable(gens[1]);
+            T{[2 * m + 1..d]}{[2 * m + 1..d]} := IdentityMat(d - 2 * m, field);
+            T{[1..m]}{[m + 1..2 * m]} := IdentityMat(m, field);
+            T{[m + 1..2 * m]}{[1..m]} := IdentityMat(m, field);
+            Add(gens, T);
+
+            # And this is a t-cycle matrix
+            S := ZeroMutable(gens[1]);
+            S{[1..d - m]}{[m + 1..d]} := IdentityMat(d - m, field);
+            S{[d - m + 1..d]}{[1..m]} := IdentityMat(m, field);
+            Add(gens, S);
+
+            # The matrix R is a product of an even number of reflections
+            # and therefore also has spinor norm 1.
+            Sm := orthogonalGens.S;
+            R := IdentityMat(d, field);
+            R{[1..m]}{[1..m]} := Sm;
+            R{[1..m]}{[1..m]} := Sm ^ -1;
+            Add(gens, R);
+
+        else
+
+            # In this case, we initially only generate Alt(t), which
+            # always have spinor norm 1.
+
+            # This is a 3-cycle matrix over the final 3 subspaces
+            T := ZeroMutable(gens[1]);
+            T{[d - 3 * m + 1..d - 2 * m]}{[d - 2 * m..d + 1 - 1 * m]} := IdentityMat(m, field);
+            T{[d - 2 * m + 1..d - 1 * m]}{[d - 1 * m + 1..d - 0 * m]} := IdentityMat(m, field);
+            T{[d - 1 * m + 1..d - 0 * m]}{[d - 3 * m + 1..d - 2 * m]} := IdentityMat(m, field);
+
+            # And this is a t-cycle matrix if t is odd and
+            # a (t - 1)-cycle matrix if t is even
+            cycleSize := (2 * QuoInt(t - 1, 2) + 1) * m;
+            S := ZeroMutable(gens[1]);
+            S{[1..cycleSize - m]}{[m + 1..cycleSize]} := IdentityMat(cycleSize - m, field);
+            S{[cycleSize - m + 1..cycleSize]}{[1..m]} := IdentityMat(m, field);
+            S{[cycleSize + 1..d]}{[cycleSize + 1..d]} := IdentityMat(d - cycleSize, field);
+            Add(gens, S);
+
+        fi;
+
+        Q := IdentityMat(d, field);
+        Qm := StandardOrthogonalForm(epsilon_0, m, q).Q;
+        for s in [1, m + 1..d - m + 1] do
+            Q{[s..s + m - 1]}{[s..s + m - 1]} := Qm;
+        od;
+
+    fi;
+
+    result := MatrixGroupWithSize(field, gens, size);
+    SetInvariantQuadraticForm(result, Q);
+    if epsilon = -1 then
+        return ConjugateToStandardForm(result, "O-");
+    elif epsilon = 0 then
+        return ConjugateToStandardForm(result, "O");
+    else
+        return ConjugateToStandardForm(result, "O+");
+    fi;
 
 end);
