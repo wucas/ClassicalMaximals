@@ -719,7 +719,7 @@ end);
 BindGlobal("UnitarySemilinearOmega",
 function(d, q)
     local F, epsilon, generators, gammaL1, gammaA, gammaB, xi, AandB, B1,
-    unitaryForm, formMatrix, C, D, size, result;
+    unitaryForm, formMatrix, bilinearForm, C, D, size, result;
 
     if IsOddInt(d) then
         ErrorNoReturn("<d> must be even");
@@ -754,19 +754,20 @@ function(d, q)
     # the constructed group preserves the quadratic form given by <formMatrix>
     unitaryForm := InvariantSesquilinearForm(GU(d / 2, q)).matrix;
     formMatrix := UnitaryFormToQuadraticForm(unitaryForm, q);
+    bilinearForm := formMatrix + TransposedMat(formMatrix);
 
     if epsilon = 1 then
         # construct an element of order 2 induced by the Frobenius of GF(q ^ 2)
         # over GF(q)
         C := MatrixByBlockMatrix(BlockMatrix(List([1..d / 2], i -> [i, i, gammaB]), d / 2, d / 2));
-        if FancySpinorNorm(formMatrix, F, C) = 1 then
+        if FancySpinorNorm(bilinearForm, F, C) = 1 then
             Add(generators, C);
         else
             # SpinorNorm(D) = -1
             # TODO Why is this true???
             D := GeneralUnitaryGroupGens(d / 2, q, xi)[1];
             D := MapGammaLToGLRatFun(D, gammaA);
-            Assert(FancySpinorNorm(formMatrix, F, C * D)) = 1;
+            Assert(0, FancySpinorNorm(bilinearForm, F, C * D) = 1);
             Add(generators, C * D);
         fi;
     fi;

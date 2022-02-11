@@ -74,4 +74,19 @@ gap> TestGammaLMeetOmega(-1, 12, 3, 3);
 gap> TestGammaLMeetOmega(-1, 12, 5, 3);
 
 #
+gap> TestUnitarySemilinearOmega := function(d, q)
+>   local G;
+>   G := UnitarySemilinearOmega(d, q);
+>   CheckIsSubsetOmega((-1) ^ (d / 2), d, q, G);
+>   CheckSize(G);
+> end;;
+gap> TestUnitarySemilinearOmega(4, 5);
+gap> TestUnitarySemilinearOmega(4, 4);
+gap> TestUnitarySemilinearOmega(4, 7);
+gap> TestUnitarySemilinearOmega(6, 3);
+gap> TestUnitarySemilinearOmega(6, 4);
+gap> TestUnitarySemilinearOmega(6, 5);
+gap> TestUnitarySemilinearOmega(6, 8);
+
+#
 gap> STOP_TEST("SemilinearMatrixGroups.tst", 0);
