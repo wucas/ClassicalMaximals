@@ -500,11 +500,181 @@ function(d, q, k)
     return ConjugateToStandardForm(result, "S");
 end);
 
+# Construction as in Lemma 4.2 of [HR10]
+BindGlobal("OmegaStabilizerOfIsotropicSubspace",
+function(epsilon, d, q, k)
+    local m, field, one, gens, linearGens, orthogonalGens, L, H_1or2,
+    OmegaGen, t, H_3or4, size, matrices, gamma, xi, eta, result;
+
+    if epsilon = 0 then
+
+        if IsEvenInt(d) then
+            ErrorNoReturn("<d> must be odd");
+        fi;
+
+    elif epsilon in [-1, 1] then
+
+        if IsOddInt(d) then
+            ErrorNoReturn("<d> must be even");
+        fi;
+
+    else
+
+        ErrorNoReturn("<epsilon> must be in [-1, 0, 1]");
+
+    fi;
+
+    if IsEvenInt(q) and IsOddInt(d) then
+        ErrorNoReturn("<d> must be even if <q> is even");
+    fi;
+
+    m := QuoInt(d, 2);
+
+    if k > m then
+        ErrorNoReturn("<k> must be less than or equal to <m>");
+    fi;
+
+    if k = m and epsilon = -1 then
+        ErrorNoReturn("<k> must not be equal to <m> for <epsilon> = -1");
+    fi;
+
+    # the construction referenced above fails for d < 5
+    if d < 5 then
+        ErrorNoReturn("<d> must be at least 5");
+    fi;
+
+    field := GF(q);
+    one := One(field);
+    gens := [];
+
+    linearGens := StandardGeneratorsOfLinearGroup(k, q);
+    
+    # We first construct the complement to the p-core of the stabilizer.
+    if IsEvenInt(q) then
+
+        for L in [linearGens.L1, linearGens.L2] do
+            H_1or2 := IdentityMat(d, field);
+            H_1or2{[1..k]}{[1..k]} := L;
+            H_1or2{[d - k + 1..d]}{[d - k + 1..d]} := RotateMat(TransposedMat(L ^ -1));
+            Add(gens, H_1or2);
+        od;
+
+        if k <> m then
+            orthogonalGens := StandardGeneratorsOfOrthogonalGroup(epsilon, d - 2 * k, q);
+            for OmegaGen in orthogonalGens.generatorsOfOmega do
+                H_3or4 := IdentityMat(d, field);
+                H_3or4{[k + 1..d - k]}{[k + 1..d - k]} := OmegaGen;
+                Add(gens, H_3or4);
+            od;
+            # Size according to Table 2.3 of [BHR13]
+            size := q ^ (k * d - QuoInt(k * (3 * k + 1), 2)) * SizeGL(k, q) * SizeOmega(epsilon, d - 2 * k, q);
+        else
+            # Size according to Table 2.3 of [BHR13]
+            size := q ^ (k * d - QuoInt(k * (3 * k + 1), 2)) * SizeGL(k, q);
+        fi;
+
+    else
+
+        if k = m then
+            
+            for L in [linearGens.L1, linearGens.L2 ^ 2] do
+                H_1or2 := IdentityMat(d, field);
+                H_1or2{[1..k]}{[1..k]} := L;
+                H_1or2{[d - k + 1..d]}{[d - k + 1..d]} := RotateMat(TransposedMat(L ^ -1));
+                Add(gens, H_1or2);
+            od;
+
+            # Size according to Table 2.3 of [BHR13]
+            if IsEvenInt(d) then
+                t := -1;
+            else
+                t := 1;
+            fi;
+            size := q ^ QuoInt(k * (k + t), 2) * QuoInt(SizeGL(k, q), 2);
+
+        else
+
+            orthogonalGens := StandardGeneratorsOfOrthogonalGroup(epsilon, d - 2 * k, q);
+            for matrices in [[linearGens.L1, IdentityMat(d - 2 * k, field)], [linearGens.L2, orthogonalGens.S]] do
+                H_1or2 := IdentityMat(d, field);
+                H_1or2{[1..k]}{[1..k]} := matrices[1];
+                H_1or2{[k + 1..d - k]}{[k + 1..d - k]} := matrices[2];
+                H_1or2{[d - k + 1..d]}{[d - k + 1..d]} := RotateMat(TransposedMat(matrices[1] ^ -1));
+                Add(gens, H_1or2);
+            od;
+
+            for OmegaGen in orthogonalGens.generatorsOfOmega do
+                H_3or4 := IdentityMat(d, field);
+                H_3or4{[k + 1..d - k]}{[k + 1..d - k]} := OmegaGen;
+                Add(gens, H_3or4);
+            od;
+
+            # Size according to Table 2.3 of [BHR13]
+            size := q ^ (k * d - QuoInt(k * (3 * k + 1), 2)) * SizeGL(k, q) * SizeOmega(epsilon, d - 2 * k, q);
+
+        fi;
+
+    fi;
+
+    # We now construct the p-core of the stabilizer.
+    if k = 1 then
+
+        Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[2, 1, one], [d, d - 1, -one]]));
+
+    elif k < QuoInt(d - 1, 2) then
+
+        Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[d - 1, 1, one], [d, 2, -one]]));
+        Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[k + 1, 1, one], [d, d - k, -one]]));
+
+    elif IsEvenInt(d) and k = m - 1 then
+
+        Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[d - 1, 1, one], [d, 2, -one]]));
+        if epsilon = 1 then
+            Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[k + 1, 1, one], [d, d - k, -one]]));
+            # [HR10] wants the matrix
+            # IdentityMat(d, field) + MatrixByEntries(field, d, d, [[k + 2, 1, one], [d - k - 1, 1, -one]])
+            # here, but that just makes no sense. Instead, this works :)
+            Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[k + 2, 1, one], [d, d - k - 1, -one]]));
+        else
+            if IsEvenInt(q) then
+                gamma := FindGamma(q);
+            else
+                xi := PrimitiveElement(GF(q ^ 2));
+                gamma := xi ^ (q + 1) * (xi + xi ^ q) ^ -2;
+            fi;
+            eta := (1 - 4 * gamma) ^ -1;
+            Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[k + 1, 1, one], [d, 1, gamma * eta], [d, k + 1, 2 * gamma * eta], [d, k + 2, -eta]]));
+        fi;
+            
+    else
+
+        Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[d - 1, 1, one], [d, 2, -one]]));
+        if IsOddInt(d) then
+            Add(gens, IdentityMat(d, field) + MatrixByEntries(field, d, d, [[k + 1, 1, one], [d, d - k, -one], [d, 1, -one / 2]]));
+        fi;
+
+    fi;
+
+    result := MatrixGroupWithSize(field, gens, size);
+    SetInvariantQuadraticFormFromMatrix(result, StandardOrthogonalForm(epsilon, d, q).Q);
+
+    if epsilon = -1 then
+        return ConjugateToStandardForm(result, "O-");
+    elif epsilon = 0 then
+        return ConjugateToStandardForm(result, "O");
+    else
+        return ConjugateToStandardForm(result, "O+");
+    fi;
+
+end);
+
 # Construction as in Lemma 4.3 of [HR10]
 BindGlobal("OmegaStabilizerOfNonDegenerateSubspace",
 function(epsilon, d, q, epsilon_0, k)
-    local m, epsilon_1, epsilon_2, orthogonal_gens_1, orthogonal_gens_2, 
-    field, gens, gen_1, gen_2, H, size, H_5, H_6, Q, result;
+    local m, epsilon_1, epsilon_2, field, gens, one, zeta,
+    bilinearFormMat_1, bilinearFormMat_2, nonzeroEntries,
+    OmegaGens, R0, R1, orthogonalGens_1, orthogonalGens_2,
+    Q, gen_1, gen_2, H, size, H_5, H_6, result;
 
     # All of the conditions below follow from the general rules of
     # orthogonal groups as well as Table 1 from [HR10], except we
@@ -593,14 +763,80 @@ function(epsilon, d, q, epsilon_0, k)
 
     fi;
 
-    orthogonal_gens_1 := StandardGeneratorsOfOrthogonalGroup(epsilon_1, k, q);
-    orthogonal_gens_2 := StandardGeneratorsOfOrthogonalGroup(epsilon_2, d - k, q);
-
     field := GF(q);
     gens := [];
 
-    for gen_1 in orthogonal_gens_1.generatorsOfOmega do
-        for gen_2 in orthogonal_gens_2.generatorsOfOmega do
+    # In this case, the group preserves both a hyperbolic and
+    # an elliptic form. If we lazily construct the form by
+    # taking the direct sum of preserved standard forms,
+    # we might end up with a form of incorrect type. To avoid
+    # this, we need to manually construct a form of correct type
+    # and conjugate accordingly. Note that this case only
+    # occurs for q odd, so we can safely divide by 2 to get
+    # the quadratic form matrix at the end.
+    # We also construct the matrices S and G from Theorem 3.9
+    # in [HR10] from scratch, because getting them through
+    # conjugation is quite messy (and somewhat inefficient).
+    # Thankfully though the forms we use here are very simple,
+    # so finding vectors with square/nonsquare form is not too
+    # complicated. Perhaps this should be abstracted to a function
+    # similar to StandardGeneratorsOfOrthogonalGroup at a later date
+    # since these generators are mentioned in Theorem 3.10 in [HR10]
+    # and used for other constructions as well.
+    if epsilon_0 = 0 then
+
+        one := One(field);
+        zeta := PrimitiveElement(field);
+
+        bilinearFormMat_1 := IdentityMat(k, field);
+        bilinearFormMat_2 := IdentityMat(d - k, field);
+        if (epsilon = 1 and (q mod 4 = 3 and d mod 4 = 2)) or (epsilon = -1 and not (q mod 4 = 3 and d mod 4 = 2)) then
+            bilinearFormMat_2[1, 1] := zeta;
+        fi;
+
+        # The following construction is akin to Theorem 3.9 in [HR10]
+        # but with custom vectors for our form(s).
+        # The vector v = [0, ..., 0, a, b] guarantees that beta(v, v)
+        # is nonsquare for our bilinear form beta, so we can use
+        # its reflection matrix to get spinor norm -1.
+        # Of course the vector [0, ..., 0, 1] satisfies beta(v, v) square,
+        # so its reflection matrix has spinor norm 1.
+        nonzeroEntries := SolveQuadraticCongruence(zeta, q);
+
+        if k = 1 then
+            orthogonalGens_1 := rec( generatorsOfOmega := [IdentityMat(1, field)], S := IdentityMat(1, field), G := [[-one]] );
+        else
+            OmegaGens := GeneratorsOfGroup(ConjugateToSesquilinearForm(Omega(0, k, q), "O-B", bilinearFormMat_1));
+            R0 := ReflectionMatrix(k, q, bilinearFormMat_1, "B",
+                                    one * Concatenation(ListWithIdenticalEntries(k - 1, 0), [1]));
+            R1 := ReflectionMatrix(k, q, bilinearFormMat_1, "B",
+                                    one * Concatenation(ListWithIdenticalEntries(k - 2, 0), [nonzeroEntries.a, nonzeroEntries.b]));
+            orthogonalGens_1 := rec( generatorsOfOmega := OmegaGens, S := R0 * R1, G := R0 );
+        fi;
+
+        OmegaGens := GeneratorsOfGroup(ConjugateToSesquilinearForm(Omega(0, d - k, q), "O-B", bilinearFormMat_2));
+        R0 := ReflectionMatrix(d - k, q, bilinearFormMat_2, "B",
+                                one * Concatenation(ListWithIdenticalEntries(d - k - 1, 0), [1]));
+        R1 := ReflectionMatrix(d - k, q, bilinearFormMat_2, "B",
+                                one * Concatenation(ListWithIdenticalEntries(d - k - 2, 0), [nonzeroEntries.a, nonzeroEntries.b]));
+        orthogonalGens_2 := rec( generatorsOfOmega := OmegaGens, S := R0 * R1, G := R0 );
+
+        Q := IdentityMat(d, field) / 2;
+        Q[k + 1, k + 1] := bilinearFormMat_2[1, 1] / 2;
+
+    else
+
+        orthogonalGens_1 := StandardGeneratorsOfOrthogonalGroup(epsilon_1, k, q);
+        orthogonalGens_2 := StandardGeneratorsOfOrthogonalGroup(epsilon_2, d - k, q);
+
+        Q := IdentityMat(d, field);
+        Q{[1..k]}{[1..k]} := StandardOrthogonalForm(epsilon_1, k, q).Q;
+        Q{[k + 1..d]}{[k + 1..d]} := StandardOrthogonalForm(epsilon_2, d - k, q).Q;
+
+    fi;
+
+    for gen_1 in orthogonalGens_1.generatorsOfOmega do
+        for gen_2 in orthogonalGens_2.generatorsOfOmega do
             H := IdentityMat(d, field);
             H{[1..k]}{[1..k]} := gen_1;
             H{[k + 1..d]}{[k + 1..d]} := gen_2;
@@ -618,8 +854,8 @@ function(epsilon, d, q, epsilon_0, k)
     if IsEvenInt(q) then
 
         H_5 := IdentityMat(d, field);
-        H_5{[1..k]}{[1..k]} := orthogonal_gens_1.S;
-        H_5{[k + 1..d]}{[k + 1..d]} := orthogonal_gens_2.S;
+        H_5{[1..k]}{[1..k]} := orthogonalGens_1.S;
+        H_5{[k + 1..d]}{[k + 1..d]} := orthogonalGens_2.S;
         Add(gens, H_5);
 
         size := QuoInt(size, 2);
@@ -629,22 +865,21 @@ function(epsilon, d, q, epsilon_0, k)
         # respectively, so the matrix H_5 has spinor norm 1 and
         # determinant 1 and is therefore in Omega(epsilon, d, q).
         H_5 := IdentityMat(d, field);
-        H_5{[1..k]}{[1..k]} := orthogonal_gens_1.G;
-        H_5{[k + 1..d]}{[k + 1..d]} := orthogonal_gens_2.G;
+        H_5{[1..k]}{[1..k]} := orthogonalGens_1.G;
+        H_5{[k + 1..d]}{[k + 1..d]} := orthogonalGens_2.G;
         Add(gens, H_5);
 
+        # Strangely, [HR10] uses the matrices S for Omega(epsilon, k, q)
+        # and Omega(epsilon, d - k, q) here, but those are not even
+        # always well-defined, so we assume that to be a typo and go
+        # with epsilon_1 and epsilon_2 here instead of epsilon.
         if k > 1 then
             H_6 := IdentityMat(d, field);
-            H_6{[1..k]}{[1..k]} := orthogonal_gens_1.S;
-            H_6{[k + 1..d]}{[k + 1..d]} := orthogonal_gens_2.S;
+            H_6{[1..k]}{[1..k]} := orthogonalGens_1.S;
+            H_6{[k + 1..d]}{[k + 1..d]} := orthogonalGens_2.S;
             Add(gens, H_6);
         fi;
     fi;
-
-    # The constructed group preserves this form matrix.
-    Q := IdentityMat(d, field);
-    Q{[1..k]}{[1..k]} := StandardOrthogonalForm(epsilon_1, k, q).Q;
-    Q{[k + 1..d]}{[k + 1..d]} := StandardOrthogonalForm(epsilon_2, d - k, q).Q;
 
     result := MatrixGroupWithSize(field, gens, size);
     SetInvariantQuadraticFormFromMatrix(result, Q);
