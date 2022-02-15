@@ -11,7 +11,7 @@ function(gramMatrix)
     fi;
 
     n := NrRows(gramMatrix);
-    Q := List(gramMatrix, ShallowCopy);
+    Q := ZeroMutable(gramMatrix);
     for i in [1..n] do
         Q{[i]}{[i + 1..n]} := NullMat(1, n - i, F);
         Q[i, i] := 1 / 2 * gramMatrix[i, i];

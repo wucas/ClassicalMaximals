@@ -74,4 +74,21 @@ gap> SpNonDegenerateImprimitives(6, 3, 2);
 Error, <m> = <d> / <t> must be even
 
 #
+gap> TestOmegaNonDegenerateImprimitives := function(epsilon, n, q, epsilon_0, t)
+>   local G;
+>   G := OmegaNonDegenerateImprimitives(epsilon, n, q, epsilon_0, t);
+>   CheckIsSubsetOmega(epsilon, n, q, G);
+>   CheckSize(G);
+> end;;
+gap> TestOmegaNonDegenerateImprimitives(0, 7, 7, 0, 7);
+gap> TestOmegaNonDegenerateImprimitives(0, 9, 7, 0, 3);
+gap> TestOmegaNonDegenerateImprimitives(0, 15, 3, 0, 3);
+gap> TestOmegaNonDegenerateImprimitives(0, 15, 3, 0, 5);
+gap> TestOmegaNonDegenerateImprimitives(1, 8, 8, -1, 2);
+gap> TestOmegaNonDegenerateImprimitives(1, 8, 5, 1, 4);
+gap> TestOmegaNonDegenerateImprimitives(1, 8, 11, 0, 8);
+gap> TestOmegaNonDegenerateImprimitives(-1, 10, 4, -1, 5);
+gap> TestOmegaNonDegenerateImprimitives(-1, 12, 3, -1, 3);
+
+#
 gap> STOP_TEST("ImprimitiveMatrixGroups.tst", 0);
