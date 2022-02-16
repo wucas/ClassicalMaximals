@@ -355,14 +355,14 @@ function(epsilon, d, q, epsilon_0, t)
 
     if IsEvenInt(m) then
         if epsilon_0 ^ t <> epsilon then
-            ErrorNoReturn("<epsilon_0> ^ t must be equal to epsilon if <d> / <t> is even");
+            ErrorNoReturn("<epsilon_0> ^ t must be equal to <epsilon> if <d> / <t> is even");
         fi;
     else
         if epsilon_0 <> 0 then
-            ErrorNoReturn("<epsilon_0> must be 0 in case is odd");
+            ErrorNoReturn("<epsilon_0> must be 0 in case <m> is odd");
         fi;
         if IsEvenInt(t) and epsilon <> (-1) ^ QuoInt((q - 1) * d, 4) then
-            ErrorNoReturn("The form must have square discriminant in case <m> is odd and <t> is even");
+            ErrorNoReturn("discriminant must be square in case <m> is odd and <t> is even");
         fi;
     fi;
 
@@ -499,5 +499,106 @@ function(epsilon, d, q, epsilon_0, t)
         return ConjugateToStandardForm(result, "O");
     else
         return ConjugateToStandardForm(result, "O+");
+    fi;
+end);
+
+# Construction as in Lemma 5.4 [HR10]
+BindGlobal("OmegaIsotropicImprimitives",
+function(d, q)
+    local m, field, gcd, gens, linearGens, L, AorB, size, result;
+
+    if IsOddInt(d) then
+        ErrorNoReturn("<d> must be even");
+    fi;
+
+    m := QuoInt(d, 2);
+    field := GF(q);
+    gcd := Gcd(q - 1, 2);
+    gens := [];
+
+    linearGens := StandardGeneratorsOfLinearGroup(m, q);
+    for L in [linearGens.L1, linearGens.L2 ^ gcd] do
+        AorB := IdentityMat(d, field);
+        AorB{[1..m]}{[1..m]} := L;
+        AorB{[m + 1..d]}{[m + 1..d]} := RotateMat(TransposedMat(L ^ -1));
+        Add(gens, AorB);
+    od;
+
+    size := SizeGL(m, q) / gcd;
+    if IsEvenInt(m) then
+        size := 2 * size;
+
+        # In this case, the andidiagonal matrix is a product
+        # of an even number of reflections and so has
+        # determinant and spinor norm 1.
+        Add(gens, AntidiagonalMat(d, field));
+    fi;
+
+    result := MatrixGroupWithSize(field, gens, size);
+    SetInvariantQuadraticFormFromMatrix(result, StandardOrthogonalForm(1, d, q).Q);
+    return ConjugateToStandardForm(result, "O+");
+end);
+
+# Construction as in Lemma 5.4 [HR10]
+BindGlobal("OmegaNonIsometricImprimitives",
+function(epsilon, d, q)
+    local m, field, gens, Q, orthogonalGens_1, orthogonalGens_2,
+    gen_1, gen_2, A, S_1, S_2, result;
+
+    if not epsilon in [-1, 1] then
+        ErrorNoReturn("<epsilon> must be -1 or 1");
+    fi;
+
+    if IsOddInt(d) then
+        ErrorNoReturn("<d> must be even");
+    fi;
+
+    m := QuoInt(d, 2);
+
+    if IsEvenInt(m) then
+        ErrorNoReturn("<d> / 2 must be odd");
+    fi;
+
+    if IsEvenInt(q) then
+        ErrorNoReturn("<q> must be odd");
+    fi;
+
+    if epsilon = (-1) ^ QuoInt((q - 1), 2) then
+        ErrorNoReturn("discriminant must be nonsquare");
+    fi;
+
+    field := GF(q);
+    gens := [];
+
+    Q := IdentityMat(d, field) / 2;
+    Q[m + 1, m + 1] := PrimitiveElement(field) / 2;
+
+    orthogonalGens_1 := AlternativeGeneratorsOfOrthogonalGroup(m, q, true);
+    orthogonalGens_2 := AlternativeGeneratorsOfOrthogonalGroup(m, q, false);
+
+    for gen_1 in orthogonalGens_1.generatorsOfOmega do
+        for gen_2 in orthogonalGens_2.generatorsOfOmega do
+            A := IdentityMat(d, field);
+            A{[1..m]}{[1..m]} := gen_1;
+            A{[m + 1..d]}{[m + 1..d]} := gen_2;
+            Add(gens, A);
+        od;
+    od;
+
+    S_1 := -IdentityMat(d, field);
+    S_1{[1..m]}{[1..m]} := -orthogonalGens_1.S;
+    Add(gens, S_1);
+
+    S_2 := -IdentityMat(d, field);
+    S_2{[m + 1..d]}{[m + 1..d]} := -orthogonalGens_2.S;
+    Add(gens, S_2);
+
+    result := MatrixGroupWithSize(field, gens, SizeSO(0, m, q) ^ 2);
+    SetInvariantQuadraticFormFromMatrix(result, Q);
+
+    if epsilon = 1 then
+        return ConjugateToStandardForm(result, "O+");
+    else
+        return ConjugateToStandardForm(result, "O-");
     fi;
 end);

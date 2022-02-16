@@ -90,5 +90,61 @@ gap> TestOmegaNonDegenerateImprimitives(1, 8, 11, 0, 8);
 gap> TestOmegaNonDegenerateImprimitives(-1, 10, 4, -1, 5);
 gap> TestOmegaNonDegenerateImprimitives(-1, 12, 3, -1, 3);
 
+# Test error handling
+gap> OmegaNonDegenerateImprimitives(0, 6, 7, 0, 7);
+Error, <d> must be odd
+gap> OmegaNonDegenerateImprimitives(1, 7, 7, 0, 7);
+Error, <d> must be even
+gap> OmegaNonDegenerateImprimitives(2, 7, 7, 0, 7);
+Error, <epsilon> must be in [-1, 0, 1]
+gap> OmegaNonDegenerateImprimitives(0, 7, 4, 0, 7);
+Error, <d> must be even if <q> is even
+gap> OmegaNonDegenerateImprimitives(-1, 8, 4, 1, 2);
+Error, <epsilon_0> ^ t must be equal to <epsilon> if <d> / <t> is even
+gap> OmegaNonDegenerateImprimitives(-1, 6, 5, 1, 2);
+Error, <epsilon_0> must be 0 in case <m> is odd
+gap> OmegaNonDegenerateImprimitives(1, 6, 3, 0, 2);
+Error, discriminant must be square in case <m> is odd and <t> is even
+gap> OmegaNonDegenerateImprimitives(1, 8, 9, 0, 8);
+Error, <q> must be an odd prime in case <t> = <d>
+
+#
+gap> TestOmegaIsotropicImprimitives := function(n, q)
+>   local G;
+>   G := OmegaIsotropicImprimitives(n, q);
+>   CheckIsSubsetOmega(1, n, q, G);
+>   CheckSize(G);
+> end;;
+
+# Test error handling
+gap> OmegaIsotropicImprimitives(5, 5);
+Error, <d> must be even
+
+#
+gap> TestOmegaNonIsometricImprimitives := function(epsilon, n, q)
+>   local G;
+>   G := OmegaNonIsometricImprimitives(epsilon, n, q);
+>   CheckIsSubsetOmega(epsilon, n, q, G);
+>   CheckSize(G);
+> end;;
+#@if IsBound(CLASSICAL_MAXIMALS_RUN_BROKEN_TESTS)
+gap> TestOmegaNonIsometricImprimitives(1, 6, 7);
+gap> TestOmegaNonIsometricImprimitives(-1, 6, 9); # see https://github.com/gap-packages/ClassicalMaximals/pull/111
+#@fi
+gap> TestOmegaNonIsometricImprimitives(1, 10, 3);
+gap> TestOmegaNonIsometricImprimitives(-1, 10, 5);
+
+# Test error handling
+gap> OmegaNonIsometricImprimitives(2, 6, 3);
+Error, <epsilon> must be -1 or 1
+gap> OmegaNonIsometricImprimitives(1, 5, 3);
+Error, <d> must be even
+gap> OmegaNonIsometricImprimitives(1, 8, 3);
+Error, <d> / 2 must be odd
+gap> OmegaNonIsometricImprimitives(1, 6, 4);
+Error, <q> must be odd
+gap> OmegaNonIsometricImprimitives(1, 6, 5);
+Error, discriminant must be nonsquare
+
 #
 gap> STOP_TEST("ImprimitiveMatrixGroups.tst", 0);
