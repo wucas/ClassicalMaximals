@@ -324,8 +324,8 @@ end);
 # Construction as in Lemmata 5.2 and 5.3 of [HR10]
 BindGlobal("OmegaNonDegenerateImprimitives",
 function(epsilon, d, q, epsilon_0, t)
-    local m, field, one, gens, size, Q, T, C, Qm, orthogonalGens,
-    cycleSize, P, squareDiscriminant, G, OmegaGen, A, S, s, result;
+    local m, field, one, gens, perm, size, Q, Qm, orthogonalGens,
+    P, squareDiscriminant, G, OmegaGen, A, S, s, result;
 
     if epsilon = 0 then
         if IsEvenInt(d) then
@@ -378,9 +378,9 @@ function(epsilon, d, q, epsilon_0, t)
             ErrorNoReturn("<q> must be an odd prime in case <t> = <d>");
         fi;
 
-        # These two permutation matrices generate the alternating group Alt(t).
-        Add(gens, PermutationMat(CycleFromList([1..2 * QuoInt(t - 1, 2) + 1]), t, field));
-        Add(gens, PermutationMat(CycleFromList([t - 2..t]), t, field));
+        for perm in GeneratorsOfGroup(AlternatingGroup(t)) do
+            Add(gens, PermutationMat(perm, t, field));
+        od;
 
         Add(gens, DiagonalMat(one * Concatenation([-1, -1], ListWithIdenticalEntries(t - 2, 1))));
 
@@ -408,24 +408,9 @@ function(epsilon, d, q, epsilon_0, t)
 
         if IsEvenInt(q) then
 
-            # In this case, we really only need to construct the
-            # symmetric group Sym(t), which we achieve with a
-            # transposition and a t-cycle.
-
-            if t > 1 then
-                # This is a transposition matrix.
-                T := NullMat(d, d, field);
-                T{[2 * m + 1..d]}{[2 * m + 1..d]} := IdentityMat(d - 2 * m, field);
-                T{[1..m]}{[m + 1..2 * m]} := IdentityMat(m, field);
-                T{[m + 1..2 * m]}{[1..m]} := IdentityMat(m, field);
-                Add(gens, T);
-
-                # And this is a t-cycle matrix.
-                C := NullMat(d, d, field);
-                C{[1..d - m]}{[m + 1..d]} := IdentityMat(d - m, field);
-                C{[d - m + 1..d]}{[1..m]} := IdentityMat(m, field);
-                Add(gens, C);
-            fi;
+            for perm in GeneratorsOfGroup(SymmetricGroup(t)) do
+                Add(gens, KroneckerProduct(PermutationMat(perm, t, field), IdentityMat(m, field)));
+            od;
 
             Qm := StandardOrthogonalForm(epsilon_0, m, q).Q;
             orthogonalGens := StandardGeneratorsOfOrthogonalGroup(epsilon_0, m, q);
@@ -434,46 +419,29 @@ function(epsilon, d, q, epsilon_0, t)
 
             size := 2 ^ (t - 1) * size;
 
-            # In this case, we first generate Alt(t). Note that T and C
-            # consist of an even number of reflections, so they both
-            # have spinor norm 1.
-
-            if t > 2 then
-                # This is a 3-cycle matrix over the final 3 subspaces.
-                T := NullMat(d, d, field);
-                T{[1..d - 3 * m]}{[1..d - 3 * m]} := IdentityMat(d - 3 * m, field);
-                T{[d - 3 * m + 1..d - 2 * m]}{[d - 2 * m + 1..d - 1 * m]} := IdentityMat(m, field);
-                T{[d - 2 * m + 1..d - 1 * m]}{[d - 1 * m + 1..d - 0 * m]} := IdentityMat(m, field);
-                T{[d - 1 * m + 1..d - 0 * m]}{[d - 3 * m + 1..d - 2 * m]} := IdentityMat(m, field);
-                Add(gens, T);
-
-                # And this is a t-cycle matrix if t is odd and
-                # a (t - 1)-cycle matrix if t is even.
-                cycleSize := (2 * QuoInt(t - 1, 2) + 1) * m;
-                C := NullMat(d, d, field);
-                C{[1..cycleSize - m]}{[m + 1..cycleSize]} := IdentityMat(cycleSize - m, field);
-                C{[cycleSize - m + 1..cycleSize]}{[1..m]} := IdentityMat(m, field);
-                C{[cycleSize + 1..d]}{[cycleSize + 1..d]} := IdentityMat(d - cycleSize, field);
-                Add(gens, C);
-            fi;
+            # In this case, we first generate Alt(t). Note that both
+            # generating permutations consist of an even number of
+            # reflections, so they both have spinor norm 1.
+            for perm in GeneratorsOfGroup(AlternatingGroup(t)) do
+                Add(gens, KroneckerProduct(PermutationMat(perm, t, field), IdentityMat(m, field)));
+            od;
 
             # now it is time to construct the form as well as a matrix in
-            # Omega(epsilon, d, q) corresponding to the cycle (1, 2).
+            # Omega(epsilon, d, q) corresponding to the cycle (1, 2) to
+            # complete Sym(t).
             Qm := IdentityMat(m, field) / 2;
-            P := one * PermutationMat((1, 2), d, field);
+            P := KroneckerProduct(PermutationMat((1, 2), t, field), IdentityMat(m, field));
             if IsOddInt(m) then
 
-                # Since the D(Q) = D(Qm) ^ t and since we assume D(Q) = S, we
-                # can pick either D(Qm) = S or D(Qm) = N. However, P only preserves
-                # Q if D(Qm) = S. This could be fixed by permuting (2, 3) instead of
-                # (1, 2) in case D(Qm) = N, but why bother when we can just choose
-                # D(Qm) = S and worry about any of that stuff.
+                # Since D(Q) = D(Qm) ^ t and since we assume D(Q) = S, we
+                # can pick either D(Qm) = S or D(Qm) = N. Picking D(Qm) = N
+                # messes with the spinor norm though, D(Qm) = S does not.
                 orthogonalGens := AlternativeGeneratorsOfOrthogonalGroup(m, q, true);
-                P{[1..m]}{[1..m]} := orthogonalGens.G * P{[1..m]}{[1..m]};
+                P{[1..m]}{[m + 1..2 * m]} := orthogonalGens.G;
 
-                # If 2 is not a square, we need to correct the spinor norm this way.
+                # If 2 is not a square, we need to correct the spinor norm.
                 if q mod 8 in [3, 5] then
-                    P{[1..m]}{[1..m]} := orthogonalGens.S * P{[1..m]}{[1..m]};
+                    P{[1..m]}{[m + 1..2 * m]} := orthogonalGens.S * P{[1..m]}{[m + 1..2 * m]};
                 fi;
 
             else
@@ -481,14 +449,10 @@ function(epsilon, d, q, epsilon_0, t)
                 squareDiscriminant := epsilon_0 = (-1) ^ QuoInt((q - 1) * m, 4);
                 orthogonalGens := AlternativeGeneratorsOfOrthogonalGroup(m, q, squareDiscriminant);
 
-                # [HR10] incorrectly claims that P has determinant 1 in case m even,
-                # but that is obviously wrong. We remedy this with this multiplication.
-                P{[1..m]}{[1..m]} := orthogonalGens.G * P{[1..m]}{[1..m]};
-
-                # In this case we need to correct the spinor norm this way.
+                # In this case we need to correct the spinor norm.
                 if not squareDiscriminant then
                     Qm[1, 1] := PrimitiveElement(field) / 2;
-                    P{[1..m]}{[1..m]} := orthogonalGens.S * P{[1..m]}{[1..m]};
+                    P{[1..m]}{[m + 1..2 * m]} := orthogonalGens.S;
                 fi;
 
             fi;
@@ -528,13 +492,12 @@ function(epsilon, d, q, epsilon_0, t)
 
     result := MatrixGroupWithSize(field, gens, size);
     SetInvariantQuadraticFormFromMatrix(result, Q);
-    # if epsilon = -1 then
-    #     return ConjugateToStandardForm(result, "O-");
-    # elif epsilon = 0 then
-    #     return ConjugateToStandardForm(result, "O");
-    # else
-    #     return ConjugateToStandardForm(result, "O+");
-    # fi;
-    return result;
 
+    if epsilon = -1 then
+        return ConjugateToStandardForm(result, "O-");
+    elif epsilon = 0 then
+        return ConjugateToStandardForm(result, "O");
+    else
+        return ConjugateToStandardForm(result, "O+");
+    fi;
 end);
