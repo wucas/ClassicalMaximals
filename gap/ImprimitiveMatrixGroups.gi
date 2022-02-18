@@ -388,7 +388,7 @@ function(epsilon, d, q, epsilon_0, t)
         # we potentially add a factor of 2 below.
         size := 2 ^ (d - 2) * Factorial(t);
 
-        if q mod 8 in [-1, 1] then
+        if q mod 8 in [1, 7] then
             # In this case 2 is square by quadratic reciprocity, so one
             # easily verifies that this matrix has spinor norm 1.
             Add(gens, PermutationMat((1, 2), t, field) * DiagonalMat(Concatenation([-1], ListWithIdenticalEntries(t - 1, 1))));

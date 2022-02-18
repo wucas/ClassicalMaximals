@@ -33,8 +33,14 @@ function(type, n, q, classes...)
         return MaximalSubgroupClassRepsSpecialUnitaryGroup(n, q, classes);
     elif type = "S" then
         return MaximalSubgroupClassRepsSymplecticGroup(n, q, classes);
+    elif type = "O-" then
+        return MaximalSubgroupClassRepsOrthogonalGroup(-1, n, q, classes);
+    elif type = "O" then
+        return MaximalSubgroupClassRepsOrthogonalGroup(0, n, q, classes);
+    elif type = "O+" then
+        return MaximalSubgroupClassRepsOrthogonalGroup(1, n, q, classes);
     fi;
-    ErrorNoReturn("not yet implemented");
+    ErrorNoReturn("Type must be in ['L', 'U', 'S', 'O-', 'O', 'O+']");
 end);
 
 # Return an element of GL(n, q) \ SL(n, q).
@@ -1161,10 +1167,11 @@ end);
 
 BindGlobal("C1SubgroupsOrthogonalGroupGeneric",
 function(epsilon, n, q)
-    local m, result, listOfks;
+    local result, m, listOfks;
+
+    result := [];
 
     m := QuoInt(n, 2);
-    result := [];
 
     # Isotropic type, number of conjugates according to Proposition 4.1.20 (I) in [KL90]
     if epsilon = -1 then
@@ -1218,6 +1225,73 @@ function(epsilon, n, q)
     fi;
 
     return result;
+end);
+
+BindGlobal("C2SubgroupsOrthogonalGroupGeneric",
+function(epsilon, n, q)
+    local result, squareDiscriminant, listOfms, genericPlusExceptions, numberOfConjugates, m, t;
+
+    result := [];
+
+    squareDiscriminant := epsilon = (-1) ^ QuoInt((q - 1) * n, 4);
+    listOfms := Difference(DivisorsInt(n), [1, n]);
+
+    # This case is nonmaximal according to Proposition 2.3.6 (x) in [BHR13]
+    if q = 3 then
+        listOfms := Difference(listOfms, [3]);
+    fi;
+
+    # These cases are also nonmaximal if epsilon = epsilon _0 = 1 according
+    # to Proposition 2.3.6 (vii), (viii), (iv), (vi) in [BHR13]
+    genericPlusExceptions := [[2, 2], [2, 3], [2, 4], [4, 2]];
+
+    # Non-degenerate type with m = 1, this case needs special treatment
+    # according to Proposition 4.2.15 in [KL90]
+    if IsPrimeInt(q) and q <> 2 and (IsOddInt(n) or squareDiscriminant) then
+        numberOfConjugates := Gcd(2, n);
+        if q mod 8 in [1, 7] then
+            numberOfConjugates := 2 * numberOfConjugates;
+        fi;
+        Append(result, ConjugateSubgroupOmega(epsilon, n, q, OmegaNonDegenerateImprimitives(epsilon, n, q, 0, n), numberOfConjugates));
+    fi;
+
+    # Non-degenerate type with m > 1
+    for m in listOfms do
+
+        t := QuoInt(n, m);
+
+        if IsEvenInt(m) then
+            # number of conjugates according to Proposition 4.2.11 (I) in [KL90]
+            if epsilon = 1 and not (m, q) in genericPlusExceptions then
+                Add(result, OmegaNonDegenerateImprimitives(epsilon, n, q, 1, t));
+            fi;
+            if (-1) ^ t = epsilon then
+                Add(result, OmegaNonDegenerateImprimitives(epsilon, n, q, -1, t));
+            fi;
+        elif (IsOddInt(t) or squareDiscriminant) and IsOddInt(q) then
+            # number of conjugates according to Proposition 4.2.14 (I) in [KL90]
+            Append(result, ConjugateSubgroupOmega(epsilon, n, q, OmegaNonDegenerateImprimitives(epsilon, n, q, 0, t), Gcd(2, t)));
+        fi;
+
+    od;
+
+
+    if IsEvenInt(n) then
+
+        # Isotropic type, number of conjugates according to Proposition 4.2.7 (I) in [KL90]
+        if epsilon = 1 then
+            Append(result, ConjugateSubgroupOmega(epsilon, n, q, OmegaIsotropicImprimitives(n, q), Gcd(2, QuoInt(n, 2))));
+        fi;
+
+        # Non-degenerate non-isometric type, number of conjugates according to Proposition 4.2.16 (I) in [KL90]
+        if  not squareDiscriminant and IsOddInt(q * QuoInt(n, 2)) then
+            Add(result, OmegaNonIsometricImprimitives(epsilon, n, q));
+        fi;
+
+    fi;
+
+    return result;
+
 end);
 
 BindGlobal("C5SubgroupsOrthogonalGroupGeneric",
@@ -1315,7 +1389,7 @@ end);
 
 InstallGlobalFunction(MaximalSubgroupClassRepsOrthogonalGroup,
 function(epsilon, n, q, classes...)
-    local maximalSubgroups;
+    local maximalSubgroups, squareDiscriminant, numberOfConjugates;
 
     if Length(classes) = 0 then
         classes := [1..9];
@@ -1336,11 +1410,57 @@ function(epsilon, n, q, classes...)
     maximalSubgroups := [];
 
     if 1 in classes then
-        # Class C6 subgroups ######################################################
+        # Class C1 subgroups ######################################################
         # Cf. Propositions 3.6.1 (n = 7), 3.7.1 (n = 8), 3.8.1 (n = 9),
         # 3.9.1 (n = 10), 3.10.1 (n = 11), 3.11.1 (n = 12)
         # and Table 8.50 (n = 8) in [BHR13]
         Append(maximalSubgroups, C1SubgroupsOrthogonalGroupGeneric(epsilon, n, q));
+    fi;
+
+    if 2 in classes then
+        # Class C2 subgroups ######################################################
+        # Cf. Propositions 3.6.2 (n = 7), 3.7.2, 3.7.3, 3.7.4 (all n = 8),
+        # 3.8.2 (n = 9), 3.9.2, 3.9.3, 3.9.4 (all n = 10), 3.10.2 (n = 11),
+        # 3.11.2, 3.11.3, 3.11.4, 3.11.5, 3.11.6 (all n = 12)
+        # and Table 8.50 (n = 8) in [BHR13]
+        if n = 10 then
+            squareDiscriminant := epsilon = (-1) ^ QuoInt(q - 1, 2);
+            if IsPrimeInt(q) and q <> 2 and squareDiscriminant then
+                numberOfConjugates := 2;
+                if q mod 8 in [1, 7] then
+                    numberOfConjugates := 2 * numberOfConjugates;
+                fi;
+                Append(maximalSubgroups, ConjugateSubgroupOmega(epsilon, n, q, OmegaNonDegenerateImprimitives(epsilon, 10, q, 0, 10), numberOfConjugates));
+            fi;
+            if (epsilon = 1 and q > 5) or (epsilon = -1 and q <> 3) then
+                Add(maximalSubgroups, OmegaNonDegenerateImprimitives(epsilon, 10, q, epsilon, 5));
+            fi;
+            if IsOddInt(q) then
+                if squareDiscriminant then
+                    Append(maximalSubgroups, ConjugateSubgroupOmega(epsilon, 10, q, OmegaNonDegenerateImprimitives(epsilon, 10, q, 0, 2), 2));
+                else
+                    Add(maximalSubgroups, OmegaNonIsometricImprimitives(epsilon, 10, q));
+                fi;
+            fi;
+        elif n = 12 and epsilon = 1 and q < 7 then
+            if q in [3, 5] then
+                Append(maximalSubgroups, ConjugateSubgroupOmega(1, 12, q, OmegaNonDegenerateImprimitives(1, 12, q, 0, 12), 2));
+            fi;
+            if q <> 3 then
+                Add(maximalSubgroups, OmegaNonDegenerateImprimitives(1, 12, q, -1, 6));
+            fi;
+            if q = 5 then
+                Append(maximalSubgroups, ConjugateSubgroupOmega(1, 12, 5, OmegaNonDegenerateImprimitives(1, 12, 5, 0, 4), 2));
+            fi;
+            if q <> 2 then
+                Add(maximalSubgroups, OmegaNonDegenerateImprimitives(1, 12, q, 1, 3));
+            fi;
+            Add(maximalSubgroups, OmegaNonDegenerateImprimitives(1, 12, q, -1, 2));
+            Add(maximalSubgroups, OmegaNonDegenerateImprimitives(1, 12, q, 1, 2));
+            Append(maximalSubgroups, ConjugateSubgroupOmega(1, 12, q, OmegaIsotropicImprimitives(12, q), 2));
+        else
+            Append(maximalSubgroups, C2SubgroupsOrthogonalGroupGeneric(epsilon, n, q));
+        fi;
     fi;
 
     if 5 in classes then

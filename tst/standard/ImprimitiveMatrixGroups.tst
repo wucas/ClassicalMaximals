@@ -81,7 +81,7 @@ gap> TestOmegaNonDegenerateImprimitives := function(epsilon, n, q, epsilon_0, t)
 >   CheckSize(G);
 > end;;
 gap> TestOmegaNonDegenerateImprimitives(0, 7, 7, 0, 7);
-gap> TestOmegaNonDegenerateImprimitives(0, 9, 7, 0, 3);
+gap> TestOmegaNonDegenerateImprimitives(0, 9, 9, 0, 3);
 gap> TestOmegaNonDegenerateImprimitives(0, 15, 3, 0, 3);
 gap> TestOmegaNonDegenerateImprimitives(0, 15, 3, 0, 5);
 gap> TestOmegaNonDegenerateImprimitives(1, 8, 8, -1, 2);
