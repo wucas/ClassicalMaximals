@@ -349,20 +349,16 @@ function(epsilon, d, q, epsilon_0, t)
 
     m := QuoInt(d, t);
 
-    if IsEvenInt(q) and IsOddInt(m) then
-        ErrorNoReturn("<m> must be even if <q> is even");
-    fi;
-
     if IsEvenInt(m) then
         if epsilon_0 ^ t <> epsilon then
             ErrorNoReturn("<epsilon_0> ^ t must be equal to <epsilon> if <d> / <t> is even");
         fi;
     else
         if epsilon_0 <> 0 then
-            ErrorNoReturn("<epsilon_0> must be 0 in case <m> is odd");
+            ErrorNoReturn("<epsilon_0> must be 0 in case <d> / <t> is odd");
         fi;
         if IsEvenInt(t) and epsilon <> (-1) ^ QuoInt((q - 1) * d, 4) then
-            ErrorNoReturn("discriminant must be square in case <m> is odd and <t> is even");
+            ErrorNoReturn("discriminant must be square in case <d> / <t> is odd and <t> is even");
         fi;
     fi;
 

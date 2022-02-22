@@ -99,12 +99,14 @@ gap> OmegaNonDegenerateImprimitives(2, 7, 7, 0, 7);
 Error, <epsilon> must be in [-1, 0, 1]
 gap> OmegaNonDegenerateImprimitives(0, 7, 4, 0, 7);
 Error, <d> must be even if <q> is even
+gap> OmegaNonDegenerateImprimitives(0, 7, 3, 0, 3);
+Error, <t> must be a divisor of <d>
 gap> OmegaNonDegenerateImprimitives(-1, 8, 4, 1, 2);
 Error, <epsilon_0> ^ t must be equal to <epsilon> if <d> / <t> is even
 gap> OmegaNonDegenerateImprimitives(-1, 6, 5, 1, 2);
-Error, <epsilon_0> must be 0 in case <m> is odd
+Error, <epsilon_0> must be 0 in case <d> / <t> is odd
 gap> OmegaNonDegenerateImprimitives(1, 6, 3, 0, 2);
-Error, discriminant must be square in case <m> is odd and <t> is even
+Error, discriminant must be square in case <d> / <t> is odd and <t> is even
 gap> OmegaNonDegenerateImprimitives(1, 8, 9, 0, 8);
 Error, <q> must be an odd prime in case <t> = <d>
 
@@ -115,6 +117,10 @@ gap> TestOmegaIsotropicImprimitives := function(n, q)
 >   CheckIsSubsetOmega(1, n, q, G);
 >   CheckSize(G);
 > end;;
+gap> TestOmegaIsotropicImprimitives(8, 8);
+gap> TestOmegaIsotropicImprimitives(8, 7);
+gap> TestOmegaIsotropicImprimitives(10, 4);
+gap> TestOmegaIsotropicImprimitives(10, 5);
 
 # Test error handling
 gap> OmegaIsotropicImprimitives(5, 5);

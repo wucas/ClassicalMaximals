@@ -705,8 +705,8 @@ function(d, q)
         L1 := one * [[-1, 1], [-1, 0]];
         L2 := one * [[-1, 1], [1, 0]];
 
-        # This is precisely L2^2, which is how we ensure that
-        # L1 and L2^2 = L3 generate (1 / 2) GL(2, 3) = SL(2, 3).
+        # This is precisely L2 ^ 2, which is how we ensure that
+        # L1 and L2 ^ 2 = L3 generate (1 / 2) GL(2, 3) = SL(2, 3).
         L3 := one * [[-1, -1], [-1, 1]];
 
     elif q in [2, 3] then
