@@ -25,7 +25,7 @@ end);
 # generators used during construction of the group immutable matrices over the
 # appropriate field.
 InstallGlobalFunction("ConjugateToSesquilinearForm",
-function(group, type, gramMatrix, returnHomomorphism...)
+function(group, type, gramMatrix)
     local gapForm, newForm, gapToCanonical, canonicalToNew, field, formMatrix,
         result, d, q, broadType;
     if not type in ["S", "O-B", "O-Q", "U"] then
@@ -109,12 +109,7 @@ function(group, type, gramMatrix, returnHomomorphism...)
         SetInvariantQuadraticFormFromMatrix(result, gramMatrix);
     fi;
 
-    if Length(returnHomomorphism) > 0 then
-        return rec(result := result, gapToCanonical := gapToCanonical,
-                   canonicalToNew := canonicalToNew);
-    else
-        return result;
-    fi;
+    return result;
 end);
 
 # If <group> preserves a sesquilinear form of type <type> (one of "S", "U", "O"
@@ -394,7 +389,7 @@ end);
 # comment above UnitaryForm).
 #
 # In general, this function should only be used if one can be sure that <G>
-# preserves a symplectic form (but one does not know which one).
+# preserves a bilinear form (but one does not know which one).
 InstallGlobalFunction("BilinearForm",
 function(G, type)
     local F, M, inverseTransposeM, counter, formMatrix, condition;

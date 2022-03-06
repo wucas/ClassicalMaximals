@@ -826,49 +826,49 @@ function(epsilon, epsilon1, d, q)
     gammaB := gammaL1.B;
 
     Q := StandardOrthogonalForm(epsilon1, d / 2, q ^ 2).Q;
-    if epsilon1 = 0 and epsilon * (-1) ^ (d * (q - 1) / 4) = 1 then
-        # Note that in the standard bilinear form Antidiag(1, ..., 1) of
-        # Omega(0, d / 2, q ^ 2), each 1 turns into a 2x2-block 
-        #   [       2               zeta + zeta ^ q         ]
-        #   [   zeta + zeta ^ q     zeta ^ 2 + zeta ^ 2q    ],
-        # which has determinant (zeta - zeta ^ q) ^ 2. Thus, the resulting Gram matrix 
-        # has determinant (zeta - zeta ^ q) ^ (2 * d / 2) = (zeta - zeta ^ q) ^ d,
-        # which is a square in GF(q) if and only if zeta - zeta ^ q is in GF(q)
-        # (since d is not divisible by 4), but this is not the case (as can be
-        # easily checked by applying the Frobenius). Hence, Tr(Antidiag(1, ..., 1))
-        # always has non-square discriminant.
-        #
-        # On the other hand, if we take Diag(zeta, 1, ..., 1) as the
-        # bilinear form for Omega(0, d / 2, q ^ 2), the calculation remains the
-        # same except for the first 2x2-block of Tr(Diag(zeta, 1, ..., 1),
-        # which is now
-        #   [   zeta + zeta ^ q         zeta ^ 2 + zeta ^ 2q    ]
-        #   [   zeta ^ 2 + zeta ^ 2q    zeta ^ 3 + zeta ^ 3q    ]
-        # and has determinant (zeta ^ ((3q + 1) / 2) - zeta ^ ((q + 3) / 2)) ^ 2 
-        # (notice that q is odd). Now it can easily be verified that, indeed, 
-        # zeta ^ ((3q + 1) / 2) - zeta ^ ((q + 3) / 2) is in GF(q) by applying
-        # the Frobenius and this means that Tr(Diag(zeta, 1, ..., 1) has
-        # square discriminant.
-        #
-        # Conclusion: We have to choose either Antidiag(1, ..., 1) or
-        # Diag(zeta, 1, ..., 1) as the bilinear form for Omega(0, d / 2, q ^ 2)
-        # to match the discriminant of the bilinear form preserved by Omega(epsilon, d, q).
-        #
-        # The bilinear form preserved by Omega(epsilon, d, q) has square
-        # discriminant if and only if epsilon * (-1) ^ (d * (q - 1) / 4) = 1 by
-        # Lemma 3.3 of [HR10].
+    # if epsilon1 = 0 and epsilon * (-1) ^ (d * (q - 1) / 4) = 1 then
+    #     # Note that in the standard bilinear form Antidiag(1, ..., 1) of
+    #     # Omega(0, d / 2, q ^ 2), each 1 turns into a 2x2-block 
+    #     #   [       2               zeta + zeta ^ q         ]
+    #     #   [   zeta + zeta ^ q     zeta ^ 2 + zeta ^ 2q    ],
+    #     # which has determinant (zeta - zeta ^ q) ^ 2. Thus, the resulting Gram matrix 
+    #     # has determinant (zeta - zeta ^ q) ^ (2 * d / 2) = (zeta - zeta ^ q) ^ d,
+    #     # which is a square in GF(q) if and only if zeta - zeta ^ q is in GF(q)
+    #     # (since d is not divisible by 4), but this is not the case (as can be
+    #     # easily checked by applying the Frobenius). Hence, Tr(Antidiag(1, ..., 1))
+    #     # always has non-square discriminant.
+    #     #
+    #     # On the other hand, if we take Diag(zeta, 1, ..., 1) as the
+    #     # bilinear form for Omega(0, d / 2, q ^ 2), the calculation remains the
+    #     # same except for the first 2x2-block of Tr(Diag(zeta, 1, ..., 1),
+    #     # which is now
+    #     #   [   zeta + zeta ^ q         zeta ^ 2 + zeta ^ 2q    ]
+    #     #   [   zeta ^ 2 + zeta ^ 2q    zeta ^ 3 + zeta ^ 3q    ]
+    #     # and has determinant (zeta ^ ((3q + 1) / 2) - zeta ^ ((q + 3) / 2)) ^ 2 
+    #     # (notice that q is odd). Now it can easily be verified that, indeed, 
+    #     # zeta ^ ((3q + 1) / 2) - zeta ^ ((q + 3) / 2) is in GF(q) by applying
+    #     # the Frobenius and this means that Tr(Diag(zeta, 1, ..., 1) has
+    #     # square discriminant.
+    #     #
+    #     # Conclusion: We have to choose either Antidiag(1, ..., 1) or
+    #     # Diag(zeta, 1, ..., 1) as the bilinear form for Omega(0, d / 2, q ^ 2)
+    #     # to match the discriminant of the bilinear form preserved by Omega(epsilon, d, q).
+    #     #
+    #     # The bilinear form preserved by Omega(epsilon, d, q) has square
+    #     # discriminant if and only if epsilon * (-1) ^ (d * (q - 1) / 4) = 1 by
+    #     # Lemma 3.3 of [HR10].
 
-        # This is a bit of a hack
-        dummyGroup := Group(zeta * IdentityMat(d / 2, F));
-        SetInvariantQuadraticFormFromMatrix(dummyGroup, Q);
+    #     # This is a bit of a hack
+    #     dummyGroup := Group(zeta * IdentityMat(d / 2, F));
+    #     SetInvariantQuadraticFormFromMatrix(dummyGroup, Q);
 
-        Q := IdentityMat(d / 2, F);
-        Q[1, 1] := zeta;
-        Q := 1 / 2 * Q;
-        conjugation := ConjugateToSesquilinearForm(dummyGroup, "O-Q", Q, true);
-        oldToIntermediate := conjugation.gapToCanonical;
-        intermediateToNew := conjugation.canonicalToNew;
-    fi;
+    #     Q := IdentityMat(d / 2, F);
+    #     Q[1, 1] := zeta;
+    #     Q := 1 / 2 * Q;
+    #     conjugation := ConjugateToSesquilinearForm(dummyGroup, "O-Q", Q, true);
+    #     oldToIntermediate := conjugation.gapToCanonical;
+    #     intermediateToNew := conjugation.canonicalToNew;
+    # fi;
     formMatrix := TakeTraceOfQuadraticForm(Q, q, 2);
     bilinearForm := formMatrix + TransposedMat(formMatrix);
 
@@ -876,12 +876,12 @@ function(epsilon, epsilon1, d, q)
     AandB := orthogonalGenerators.generatorsOfOmega;
     S := orthogonalGenerators.S;
     G := orthogonalGenerators.G;
-    if epsilon1 = 0 and epsilon * (-1) ^ (d * (q - 1) / 4) = 1 then
-        # conjugate the generators according to the new choice of form
-        AandB := List(AandB, g -> intermediateToNew(oldToIntermediate(g)));
-        S := intermediateToNew(oldToIntermediate(S));
-        G := intermediateToNew(oldToIntermediate(G));
-    fi;
+    # if epsilon1 = 0 and epsilon * (-1) ^ (d * (q - 1) / 4) = 1 then
+    #     # conjugate the generators according to the new choice of form
+    #     AandB := List(AandB, g -> intermediateToNew(oldToIntermediate(g)));
+    #     S := intermediateToNew(oldToIntermediate(S));
+    #     G := intermediateToNew(oldToIntermediate(G));
+    # fi;
     # These matrices generate a group isomorphic to Omega(epsilon1, d / 2, q ^ 2) 
     # as a subgroup of Omega(epsilon, d, q)
     AandB := List(AandB, g -> MapGammaLToGL(g, gammaA, zeta));
@@ -950,6 +950,13 @@ function(epsilon, epsilon1, d, q)
             CS := C * MatrixByBlockMatrix(BlockMatrix(List([1..d / 2], 
                                                            i -> [i, i, gammaA ^ ((q - 1) / 2)]), 
                                                       d / 2, d / 2));
+
+            # In this case, contrary to what [HR10] suggests, the quadratic
+            # form preserved by the constructed group is *not* obtained by
+            # taking the trace of some quadratic form on GF(q ^ 2) ^ (d / 2).
+            bilinearForm := BilinearForm(Group(Concatenation(generators, [CS])), "O");
+            formMatrix := BilinearToQuadraticForm(bilinearForm);
+
             if FancySpinorNorm(bilinearForm, F, CS) = 1 then
                 Add(generators, CS);
             else
