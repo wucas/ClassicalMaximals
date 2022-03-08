@@ -25,6 +25,20 @@ function(entries, field)
     return m;
 end);
 
+InstallGlobalFunction("RotateMat",
+function(A)
+    local m, n, B, i, j;
+    m := NrRows(A);
+    n := NrCols(A);
+    B := ZeroMutable(A);
+    for i in [1..m] do
+        for j in [1..n] do
+            B[m - i + 1, n - j + 1] := A[i, j];
+        od;
+    od;
+    return B;
+end);
+
 # Solving the congruence a ^ 2 + b ^ 2 = c in F_q by trial and error.
 #
 # A solution always exists by a simple counting argument using the pigeonhole
@@ -249,7 +263,6 @@ function(m, n)
     fi;
 end);
 
-
 # Compute the size of Sp(n, q) according to Theorem 1.6.22 in [BHR13]
 InstallGlobalFunction("SizeSp",
 function(n, q)
@@ -267,13 +280,11 @@ function(n, q)
     return result;
 end);
 
-
 # Compute the size of PSp(n, q) according to Table 1.3 in [BHR13],
 InstallGlobalFunction("SizePSp",
 function(n, q)
     return QuoInt(SizeSp(n, q), Gcd(2, q - 1));
 end);
-
 
 # Compute the size of SU(n, q) according to Theorem 1.6.22 in [BHR13]
 # using the formula for GU(n, q) but starting with i = 2
@@ -306,7 +317,6 @@ InstallGlobalFunction("SizeGU",
 function(n, q)
     return (q + 1) * SizeSU(n, q);
 end);
-
 
 # Compute the size of GO(epsilon, n, q) according to Theorem 1.6.22 in [BHR13]
 InstallGlobalFunction("SizeGO",
@@ -346,7 +356,6 @@ function(epsilon, n, q)
 
     return result;
 end);
-
 
 # Compute the size of SO(epsilon, n, q) according to Table 1.3 in [BHR13]
 InstallGlobalFunction("SizeSO",
@@ -495,12 +504,13 @@ function(epsilon, n, q)
     return rec(generatorsOfSO := generatorsOfSO, D := D, E := E);
 end);
 
-# Construct standard generators generatorsOfOmega, S, G, D for the orthogonal 
-# groups as used in [HR10], with the following properties:
+# Construct standard generators generatorsOfOmega, S, G, D for the orthogonal
+# groups with respect to our standard form as used in [HR10], with the
+# following properties:
 #   * generatorsOfOmega generate Omega(epsilon, d, q)
 #   * generatorsOfOmega and S generate SO(epsilon, d, q)
 #   * generatorsOfOmega, S and G generate GO(epsilon, d, q)
-#   * the spinor norm of G is 1 
+#   * the spinor norm of G is 1
 #   * D generates CO(epsilon, d, q) mod GO(epsilon, d, q)
 # Construction as in Theorem 3.9 loc. cit.
 BindGlobal("StandardGeneratorsOfOrthogonalGroup",
@@ -528,7 +538,7 @@ function(epsilon, d, q)
     # In this case, 1 = Omega = SO, GO = Z_2 and CO = Z_(q - 1)
     # up to isomorphisms.
     if d = 1 then
-        return rec( generatorsOfOmega := [IdentityMat(1, field)], S := IdentityMat(1, field), G := [[-one]], D := [[zeta]] );
+        return rec(generatorsOfOmega := [IdentityMat(1, field)], S := IdentityMat(1, field), G := [[-one]], D := [[zeta]]);
     fi;
 
     standardForm := StandardOrthogonalForm(epsilon, d, q);
@@ -606,6 +616,67 @@ function(epsilon, d, q)
     return rec(generatorsOfOmega := generatorsOfOmega, S := S, G := G, D := D);
 end);
 
+# Construct standard generators generatorsOfOmega, S, G, D for the orthogonal
+# groups with respect to our diagonal form of given discriminant as used in [HR10],
+# with the following properties (note that epsilon is uniquely determined by
+# the given parameters):
+#   * generatorsOfOmega generate Omega(epsilon, d, q)
+#   * generatorsOfOmega and S generate SO(epsilon, d, q)
+#   * generatorsOfOmega, S and G generate GO(epsilon, d, q)
+#   * the spinor norm of G is 1
+#   * D generates CO(epsilon, d, q) mod GO(epsilon, d, q)
+# Construction as in Theorem 3.9 loc. cit., but with different vectors.
+# Recall that q must be odd in this case.
+BindGlobal("AlternativeGeneratorsOfOrthogonalGroup",
+function(d, q, squareDiscriminant)
+    local field, one, zeta, epsilon, F, nonZeroEntries, vectorOfNonSquareForm,
+    vectorOfSquareForm, R0, R1, generatorsOfOmega, S, G, D;
+
+    if IsEvenInt(q) then
+        ErrorNoReturn("<q> must be odd");
+    fi;
+
+    field := GF(q);
+    one := One(field);
+    zeta := PrimitiveElement(field);
+
+    # In this case, 1 = Omega = SO, GO = Z_2 and CO = Z_(q - 1)
+    # up to isomorphisms.
+    if d = 1 then
+        return rec(generatorsOfOmega := [IdentityMat(1, field)], S := IdentityMat(1, field), G := [[-one]], D := [[zeta]]);
+    fi;
+
+    # we recover epsilon from d and q using Proposition 2.5.10 from [KL90],
+    # notice that the sign will flip if the discriminant is nonsquare.
+    if IsEvenInt(d) then
+        epsilon := (-1) ^ QuoInt((q - 1) * d, 4);
+    else
+        epsilon := 0;
+    fi;
+
+    F := IdentityMat(d, field);
+
+    if squareDiscriminant then
+        nonZeroEntries := SolveQuadraticCongruence(zeta, q);
+        vectorOfNonSquareForm := one * Concatenation([nonZeroEntries.a, nonZeroEntries.b], ListWithIdenticalEntries(d - 2, 0));
+    else
+        F[1, 1] := zeta;
+        vectorOfNonSquareForm := one * Concatenation([1], ListWithIdenticalEntries(d - 1, 0));
+        epsilon := -epsilon;
+    fi;
+
+    vectorOfSquareForm := one * Concatenation(ListWithIdenticalEntries(d - 1, 0), [1]);
+    R0 := ReflectionMatrix(d, q, F, "B", vectorOfSquareForm);
+    R1 := ReflectionMatrix(d, q, F, "B", vectorOfNonSquareForm);
+
+    generatorsOfOmega := GeneratorsOfGroup(ConjugateToSesquilinearForm(Omega(epsilon, d, q), "O-B", F));
+    S := R0 * R1;
+    G := R0;
+    D := zeta * IdentityMat(d, field);
+
+    return rec(generatorsOfOmega := generatorsOfOmega, S := S, G := G, D := D);
+end);
+
 # Construct standard generators L1, L2, L3 as used in [HR10]
 # with the following properties similar to Theorem 3.11 in [HR10]:
 #   * L1 and L2 generate GL(d, q)
@@ -634,8 +705,8 @@ function(d, q)
         L1 := one * [[-1, 1], [-1, 0]];
         L2 := one * [[-1, 1], [1, 0]];
 
-        # This is precisely L2^2, which is how we ensure that
-        # L1 and L2^2 = L3 generate (1 / 2) GL(2, 3) = SL(2, 3).
+        # This is precisely L2 ^ 2, which is how we ensure that
+        # L1 and L2 ^ 2 = L3 generate (1 / 2) GL(2, 3) = SL(2, 3).
         L3 := one * [[-1, -1], [-1, 1]];
 
     elif q in [2, 3] then

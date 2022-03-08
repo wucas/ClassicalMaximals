@@ -13,8 +13,8 @@ function(gramMatrix)
     n := NrRows(gramMatrix);
     Q := List(gramMatrix, ShallowCopy);
     for i in [1..n] do
-        Q{[i]}{[i + 1..n]} := NullMat(1, n - i, F);
-        Q[i, i] := 1 / 2 * gramMatrix[i, i];
+        Q{[i + 1..n]}{[i]} := NullMat(n - i, 1, F);
+        Q[i, i] := gramMatrix[i, i] / 2;
     od;
 
     return Q;
