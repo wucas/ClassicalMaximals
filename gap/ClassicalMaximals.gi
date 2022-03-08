@@ -1278,7 +1278,8 @@ function(epsilon, n, q, classes...)
 
     if 3 in classes then
         # Class C3 subgroups ######################################################
-        # Cf. Propositions 3.6.3, 3.7.5, 3.8.3, 3.9.5, 3.10.3 and 3.11.7 in [BHR13]
+        # Cf. Propositions 3.6.3 (n = 7), 3.7.5 (n = 8), 3.8.3 (n = 9), 
+        # 3.9.5 (n = 10), 3.10.3 (n = 11) and 3.11.7 (n = 12) in [BHR13]
         Append(maximalSubgroups, C3SubgroupsOrthogonalGroupGeneric(epsilon, n, q));
     fi;
 
