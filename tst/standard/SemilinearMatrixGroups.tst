@@ -89,4 +89,22 @@ gap> TestUnitarySemilinearOmega(6, 5);
 gap> TestUnitarySemilinearOmega(6, 8);
 
 #
+gap> TestOrthogonalSemilinearOmega := function(epsilon, epsilon1, d, q)
+>   local G;
+>   G := OrthogonalSemilinearOmega(epsilon, epsilon1, d, q);
+>   CheckIsSubsetOmega(epsilon, d, q, G);
+>   CheckSize(G);
+> end;;
+gap> TestOrthogonalSemilinearOmega(1, 0, 6, 3);
+#@if IsBound(CLASSICAL_MAXIMALS_RUN_BROKEN_TESTS)
+gap> TestOrthogonalSemilinearOmega(-1, 0, 6, 3); # `with 2`
+#@fi
+gap> TestOrthogonalSemilinearOmega(1, 0, 6, 5);
+gap> TestOrthogonalSemilinearOmega(-1, 0, 6, 5);
+gap> TestOrthogonalSemilinearOmega(1, 1, 8, 7);
+gap> TestOrthogonalSemilinearOmega(-1, -1, 8, 7);
+gap> TestOrthogonalSemilinearOmega(1, 1, 8, 5);
+gap> TestOrthogonalSemilinearOmega(-1, -1, 8, 5);
+
+#
 gap> STOP_TEST("SemilinearMatrixGroups.tst", 0);
