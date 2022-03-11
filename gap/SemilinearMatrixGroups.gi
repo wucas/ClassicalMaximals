@@ -568,3 +568,364 @@ function(d, q)
     # Conjugate the result so that it preserves the standard symplectic form 
     return ConjugateToStandardForm(result, "S");
 end);
+
+# For a quadratic form Q on the vector space GF(q ^ s) ^ (d / s) given 
+# by the Gram matrix <form>, we can interpret any v in GF(q) ^ d as an element of 
+# GF(q ^ s) ^ (d / s) via the standard basis. Taking the trace of Q(v)
+# yields a quadratic form Q' on the vector space GF(q) ^ d. Furthermore, if
+# beta is the polar form of Q, then the polar form beta' of Q' is given by
+# beta'(u, v) = Tr(beta(u, v)), where u, v are again to be interpreted as
+# elements of GF(q ^ s) ^ (d / s) on the right-hand side.
+#
+# Note that we assume that <form> is an upper-triangular matrix.
+BindGlobal("TakeTraceOfQuadraticForm",
+function(form, q, s)
+    local F, d, newForm, B, i, j, eiOverGFqsEntry, eiOverGFqsIndex,
+    ejOverGFqsEntry, ejOverGFqsIndex, valueOfPolarForm, valueOfQuadraticForm;
+
+    F := GF(q);
+    d := s * Size(form);
+    newForm := NullMat(d, d, F);
+    B := CanonicalBasis(AsField(F, GF(q ^ s)));
+
+    for i in [1..d] do
+        # The basis vector ei of GF(q) ^ d corresponds to a vector in 
+        # GF(q ^ s) ^ (d / s) with the entry eiOverGFqsEntry in the 
+        # eiOverGFqsIndex-th component.
+        eiOverGFqsEntry := B[(i - 1) mod s + 1];
+        eiOverGFqsIndex := QuoInt(i - 1, s) + 1;
+
+        for j in [i + 1..d] do
+            ejOverGFqsEntry := B[(j - 1) mod s + 1];
+            ejOverGFqsIndex := QuoInt(j - 1, s) + 1;
+            
+            if eiOverGFqsIndex <> ejOverGFqsIndex then
+                valueOfPolarForm := eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex] 
+                                                    * ejOverGFqsEntry;
+            else
+                valueOfPolarForm := 2 * eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex]
+                                                        * ejOverGFqsEntry;
+            fi;
+            newForm[i, j] := TraceOverFiniteField(valueOfPolarForm, q, s);
+        od;
+
+        valueOfQuadraticForm := eiOverGFqsEntry ^ 2 * form[eiOverGFqsIndex, eiOverGFqsIndex];
+        newForm[i, i] := TraceOverFiniteField(valueOfQuadraticForm, q, s);
+    od; 
+
+    return newForm;
+end);
+
+# Construction as in Lemma 6.3 of [HR10]
+BindGlobal("GammaLMeetOmega",
+function(epsilon, d, q, s)
+    local F, gammaL1, gammaA, gammaB, Q, conjugatedOmega, zeta, AandB, size, C,
+    result, formMatrix;
+    
+    if d mod s <> 0 or not IsPrime(s) then
+        ErrorNoReturn("<s> must be a prime divisor of <d>");
+    elif s = 2 then
+        ErrorNoReturn("<s> must be odd");
+    fi;
+
+    if d / s < 3 then 
+        ErrorNoReturn("<d> / <s> must be at least 3");
+    fi;
+
+    if not epsilon in [-1, 0, 1] then
+        ErrorNoReturn("<epsilon> must be one of -1, 0, 1");
+    elif epsilon = 0 and IsEvenInt(d) then
+        ErrorNoReturn("<epsilon> cannot be zero if <d> is even");
+    elif epsilon <> 0 and IsOddInt(d) then
+        ErrorNoReturn("<epsilon> must be zero if <d> is odd");
+    fi;
+
+    F := GF(q);
+    gammaL1 := MatricesInducingGaloisGroupOfGFQToSOverGFQ(s, q);
+    gammaA := gammaL1.A;
+    # By Lemma 6.2 of [HR05], det(gammaB) = (-1) ^ (s - 1) = 1.
+    gammaB := gammaL1.B;
+
+    Q := StandardOrthogonalForm(epsilon, d / s, q).Q;
+    conjugatedOmega := ConjugateToSesquilinearForm(Omega(epsilon, d / s, q ^ s), "O-Q", Q);
+    zeta := PrimitiveElement(GF(q ^ s));
+    # These matrices generate a group isomorphic to Omega(epsilon, d / s, q ^ s) 
+    # as a subgroup of Omega(epsilon, d, q)
+    AandB := List(GeneratorsOfGroup(conjugatedOmega), g -> MapGammaLToGL(g, gammaA, zeta));
+
+    # C has order s
+    C := MatrixByBlockMatrix(BlockMatrix(List([1..d / s], i -> [i, i, gammaB]), d / s, d / s));
+
+    # Size according to Table 2.6 of [BHR13]
+    size := SizeOmega(epsilon, d / s, q ^ s) * s;
+    result := MatrixGroupWithSize(F, Concatenation(AandB, [C]), size);
+
+    # The constructed group preserves the quadratic form given by <formMatrix>
+    formMatrix := TakeTraceOfQuadraticForm(Q, q, s);
+    SetInvariantQuadraticFormFromMatrix(result, formMatrix);
+    
+    if epsilon = 0 then
+        return ConjugateToStandardForm(result, "O");
+    elif epsilon = 1 then
+        return ConjugateToStandardForm(result, "O+");
+    elif epsilon = -1 then
+        return ConjugateToStandardForm(result, "O-");
+    fi;
+end);
+
+# Let k be a unitary form over GF(q ^ 2) ^ (d / 2). We can consider a vector v
+# in GF(q) ^ d as an element of GF(q ^ 2) ^ (d / 2) via the standard basis of
+# GF(q ^ 2) over GF(q). Then Q(v) = k(v, v) defines a quadratic form Q on
+# GF(q) ^ d. 
+#
+# Return the Gram matrix of the quadratic form Q given the Gram matrix
+# <form> of the unitary form k.
+BindGlobal("UnitaryFormToQuadraticForm",
+function(form, q)
+    local F, d, newForm, B, i, eiOverGFqsEntry, eiOverGFqsIndex, j,
+    ejOverGFqsEntry, ejOverGFqsIndex, valueOfPolarForm, valueOfQuadraticForm;
+
+    F := GF(q);
+    d := NrRows(form) * 2;
+    
+    newForm := NullMat(d, d, F);
+    B := CanonicalBasis(AsField(F, GF(q ^ 2)));
+
+    for i in [1..d] do
+        # The basis vector ei of GF(q) ^ d corresponds to a vector in 
+        # GF(q ^ s) ^ (d / s) with the entry eiOverGFqsEntry in the 
+        # eiOverGFqsIndex-th component.
+        eiOverGFqsEntry := B[(i - 1) mod 2 + 1];
+        eiOverGFqsIndex := QuoInt(i - 1, 2) + 1;
+
+        for j in [i + 1..d] do
+            ejOverGFqsEntry := B[(j - 1) mod 2 + 1];
+            ejOverGFqsIndex := QuoInt(j - 1, 2) + 1;
+
+            valueOfPolarForm := eiOverGFqsEntry * form[eiOverGFqsIndex, ejOverGFqsIndex]
+                                                * ejOverGFqsEntry ^ q;
+
+            newForm[i, j] := TraceOverFiniteField(valueOfPolarForm, q, 2);
+        od;
+
+        valueOfQuadraticForm := eiOverGFqsEntry ^ (q + 1) * form[eiOverGFqsIndex, eiOverGFqsIndex];
+        newForm[i, i] := valueOfQuadraticForm;
+    od; 
+
+    return newForm;
+end);
+
+# Construction as in Lemma 6.5 of [HR10]
+BindGlobal("UnitarySemilinearOmega",
+function(d, q)
+    local F, epsilon, generators, gammaL1, gammaA, gammaB, xi, AandB, B1,
+    unitaryForm, formMatrix, bilinearForm, C, D, size, result;
+
+    if IsOddInt(d) then
+        ErrorNoReturn("<d> must be even");
+    fi;
+
+    F := GF(q);
+    epsilon := (-1) ^ (d / 2);
+
+    gammaL1 := MatricesInducingGaloisGroupOfGFQToSOverGFQ(2, q);
+    gammaA := gammaL1.A;
+    gammaB := gammaL1.B;
+
+    xi := Indeterminate(GF(q ^ 2));
+
+    if IsOddInt(q) then
+        # construct 1 / 2 * GU(d / 2, q)
+        AandB := SpecialUnitaryGroupGens(d / 2, q, xi);
+        AandB := List(AandB, g -> MapGammaLToGLRatFun(g, gammaA));
+        # the determinant of B1 is always a (q + 1) / 2 - th root of unity,
+        # i.e. B1 has order (q + 1) / 2 wrt SU(d / 2, q), which is what we want
+        # since [GU : SU] = q + 1
+        B1 := GeneralUnitaryGroupGens(d / 2, q, xi)[1] ^ 2;
+        B1 := MapGammaLToGLRatFun(B1, gammaA);
+        generators := Concatenation(AandB, [B1]);
+    else
+        # construct GU(d / 2, q)
+        AandB := GeneralUnitaryGroupGens(d / 2, q, xi);
+        AandB := List(AandB, g -> MapGammaLToGLRatFun(g, gammaA));
+        generators := AandB;
+    fi; 
+
+    # the constructed group preserves the quadratic form given by <formMatrix>
+    unitaryForm := InvariantSesquilinearForm(GU(d / 2, q)).matrix;
+    formMatrix := UnitaryFormToQuadraticForm(unitaryForm, q);
+    bilinearForm := formMatrix + TransposedMat(formMatrix);
+
+    if epsilon = 1 then
+        # construct an element of order 2 induced by the Frobenius of GF(q ^ 2)
+        # over GF(q)
+        C := MatrixByBlockMatrix(BlockMatrix(List([1..d / 2], i -> [i, i, gammaB]), d / 2, d / 2));
+        if FancySpinorNorm(bilinearForm, F, C) = 1 then
+            Add(generators, C);
+        else
+            # SpinorNorm(D) = -1
+            # TODO Why is this true???
+            D := GeneralUnitaryGroupGens(d / 2, q, xi)[1];
+            D := MapGammaLToGLRatFun(D, gammaA);
+            Assert(0, FancySpinorNorm(bilinearForm, F, C * D) = 1);
+            Add(generators, C * D);
+        fi;
+    fi;
+
+    # Size according to Lemma 6.5 in [HR10]
+    size := 1 / 2 * SizeGU(d / 2, q);
+    if epsilon = 1 then
+        size := 2 * size;
+    fi;
+    if IsEvenInt(q) then
+        size := 2 * size;
+    fi;
+    result := MatrixGroupWithSize(F, generators, size);
+
+    SetInvariantQuadraticFormFromMatrix(result, formMatrix);
+    
+    if epsilon = 1 then
+        return ConjugateToStandardForm(result, "O+");
+    else
+        return ConjugateToStandardForm(result, "O-");
+    fi;
+end);
+
+# Construction as in Lemma 6.4 of [HR10]
+BindGlobal("OrthogonalSemilinearOmega",
+function(epsilon, epsilon1, d, q)
+    local F, gammaL1, gammaA, gammaB, Q, dummyGroup, conjugation, 
+    oldToIntermediate, intermediateToNew, formMatrix, bilinearForm, 
+    orthogonalGenerators, zeta, AandB, C, S, TauS, G, TauG, generators, 
+    CS, size, result;
+
+    if IsOddInt(d) then
+        ErrorNoReturn("<d> must be even");
+    fi;
+    if not epsilon in [-1, 1] then
+        ErrorNoReturn("<epsilon> must be -1 or 1");
+    fi;
+    if epsilon1 <> 0 then
+        if IsOddInt(d / 2) then
+            ErrorNoReturn("<epsilon1> must be 0 if <d> / 2 is odd");
+        fi;
+        if d / 2 < 3 then
+            ErrorNoReturn("<d> / 2 must be at least 3 if <epsilon> = <epsilon1>");
+        fi;
+    elif epsilon1 = 0 then
+        if IsEvenInt(q * d / 2) then
+            ErrorNoReturn("<q> * <d> / 2 must be odd if <epsilon> <> <epsilon1>");
+        fi;
+    fi;
+
+    F := GF(q);
+    zeta := PrimitiveElement(GF(q ^ 2));
+    gammaL1 := MatricesInducingGaloisGroupOfGFQToSOverGFQ(2, q);
+    gammaA := gammaL1.A;
+    # By Lemma 6.2 of [HR05], det(gammaB) = -1.
+    gammaB := gammaL1.B;
+
+    Q := StandardOrthogonalForm(epsilon1, d / 2, q ^ 2).Q;
+    formMatrix := TakeTraceOfQuadraticForm(Q, q, 2);
+    bilinearForm := formMatrix + TransposedMat(formMatrix);
+
+    orthogonalGenerators := StandardGeneratorsOfOrthogonalGroup(epsilon1, d / 2, q ^ 2);
+    AandB := orthogonalGenerators.generatorsOfOmega;
+    S := orthogonalGenerators.S;
+    G := orthogonalGenerators.G;
+    AandB := List(AandB, g -> MapGammaLToGL(g, gammaA, zeta));
+    TauS := MapGammaLToGL(S, gammaA, zeta);
+    TauG := MapGammaLToGL(G, gammaA, zeta);
+
+    generators := AandB;
+
+    # C has order 2
+    C := MatrixByBlockMatrix(BlockMatrix(List([1..d / 2], i -> [i, i, gammaB]), d / 2, d / 2));
+
+    if epsilon = 1 and d mod 4 = 0 then
+        if IsEvenInt(q) then
+            # det(C) = (-1) ^ (d / 2) = 1
+            Add(generators, C);
+            Add(generators, MapGammaLToGL(S, gammaA, zeta));
+        else
+            if FancySpinorNorm(bilinearForm, F, TauG) = 1 then
+                Add(generators, TauG);
+            else
+                # SpinorNorm(TauS) = -1
+                Add(generators, TauS * TauG);
+            fi;
+            if FancySpinorNorm(bilinearForm, F, C) = 1 then
+                # det(C) = (-1) ^ (d / 2) = 1
+                Add(generators, C);
+            else
+                # SpinorNorm(TauS) = -1
+                Add(generators, TauS * C);
+            fi;
+        fi;
+
+        # Size according to Lemma 6.4 of [HR10]
+        size := SizeOmega(1, d / 2, q ^ 2) * 4;
+    elif epsilon = -1 and d mod 4 = 0 then
+        if IsEvenInt(q) then
+            Add(generators, TauS);
+        else
+            if FancySpinorNorm(bilinearForm, F, TauG) = 1 then
+                Add(generators, TauG);
+            else
+                # SpinorNorm(TauS) = -1
+                Add(generators, TauS * TauG);
+            fi;
+        fi;
+
+        # Size according to Lemma 6.4 of [HR10]
+        size := SizeOmega(-1, d / 2, q ^ 2) * 2;
+    else
+        # d mod 4 = 2 and q odd
+        if epsilon * (-1) ^ (d * (q - 1) / 4) = -1 then
+            # formMatrix represents a quadratic form of non-square discriminant
+            # by Lemma 3.3 of [HR10]
+            if FancySpinorNorm(bilinearForm, F, TauS) = 1 then
+                Add(generators, TauS);
+            else
+                # -I is not in Omega(epsilon, d, q) if the quadratic form has
+                # non-square discriminant
+                Add(generators, -TauS);
+            fi;
+
+            # Size according to Lemma 6.4 of [HR10]
+            size := SizeOmega(0, d / 2, q ^ 2) * 2;
+        else
+            # formMatrix represents a quadratic form of square discriminant
+            CS := C * MatrixByBlockMatrix(BlockMatrix(List([1..d / 2], 
+                                                           i -> [i, i, gammaA ^ ((q - 1) / 2)]), 
+                                                      d / 2, d / 2));
+
+            # In this case, contrary to what [HR10] suggests, the quadratic
+            # form preserved by the constructed group is *not* obtained by
+            # taking the trace of some quadratic form on GF(q ^ 2) ^ (d / 2).
+            bilinearForm := BilinearForm(Group(Concatenation(generators, [CS])), "O");
+            formMatrix := BilinearToQuadraticForm(bilinearForm);
+
+            if FancySpinorNorm(bilinearForm, F, CS) = 1 then
+                Add(generators, CS);
+            else
+                # SpinorNorm(TauS) = -1
+                Add(generators, TauS * CS);
+            fi;
+
+            # Size according to Lemma 6.4 of [HR10]
+            size := 2 * SizeOmega(0, d / 2, q ^ 2) * 2;
+        fi;
+    fi;
+
+    result := MatrixGroupWithSize(F, generators, size);
+
+    # The constructed group preserves the quadratic form given by <formMatrix>
+    SetInvariantQuadraticFormFromMatrix(result, formMatrix);
+
+    if epsilon = 1 then
+        return ConjugateToStandardForm(result, "O+");
+    else
+        return ConjugateToStandardForm(result, "O-");
+    fi;
+end);

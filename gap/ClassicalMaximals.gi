@@ -1164,7 +1164,7 @@ function(epsilon, n, q, G, numberOfConjugates)
 
     return result;
 end);
-
+    
 BindGlobal("C1SubgroupsOrthogonalGroupGeneric",
 function(epsilon, n, q)
     local result, m, listOfks;
@@ -1292,6 +1292,70 @@ function(epsilon, n, q)
 
     return result;
 
+end);
+
+# Cf. Tables 3.5.D, 3.5.E, 3.5.F and 3.5.G in [KL90]
+BindGlobal("C3SubgroupsOrthogonalGroupGeneric",
+function(epsilon, n, q)
+    local result, primeDivisorsOfn, s, orthogonalTypeSubgroup, numberOfConjugates,
+    unitaryTypeSubgroup;
+
+    result := [];
+    primeDivisorsOfn := PrimeDivisors(n);
+
+    # type GO(epsilon, n / s, q ^ s)
+    for s in primeDivisorsOfn do
+        if not n / s > 2 then 
+            continue;
+        fi;
+
+        if s = 2 then
+            if not n mod 4 = 0 then
+                continue;
+            else
+                orthogonalTypeSubgroup := OrthogonalSemilinearOmega(epsilon, epsilon, n, q);
+                if epsilon = 1 then
+                    numberOfConjugates := 2;
+                else
+                    numberOfConjugates := 1;
+                fi;
+                result := Concatenation(result, ConjugateSubgroupOmega(epsilon, n, q,
+                                                                       orthogonalTypeSubgroup,
+                                                                       numberOfConjugates));
+            fi;
+        else
+            orthogonalTypeSubgroup := GammaLMeetOmega(epsilon, n, q, s);
+            Add(result, orthogonalTypeSubgroup);
+        fi;
+    od;
+
+    # type GO(0, n / 2, q ^ 2)
+    if n mod 4 = 2 and IsOddInt(q) then
+        orthogonalTypeSubgroup := OrthogonalSemilinearOmega(epsilon, 0, n, q);
+        if q mod 4 = 1 then
+            numberOfConjugates := 1;
+        else    
+            numberOfConjugates := 2;
+        fi;
+        result := Concatenation(result, ConjugateSubgroupOmega(epsilon, n, q,
+                                                               orthogonalTypeSubgroup,
+                                                               numberOfConjugates));
+    fi;
+
+    # type GU(n / 2, q ^ 2)
+    if (n mod 4 = 2 and epsilon = -1) or (n mod 4 = 0 and epsilon = 1) then
+        unitaryTypeSubgroup := UnitarySemilinearOmega(n, q);
+        if epsilon = 1 then
+            numberOfConjugates := 2;
+        else
+            numberOfConjugates := 1;
+        fi;
+        result := Concatenation(result, ConjugateSubgroupOmega(epsilon, n, q,
+                                                               unitaryTypeSubgroup,
+                                                               numberOfConjugates));
+    fi;
+    
+    return result;
 end);
 
 BindGlobal("C5SubgroupsOrthogonalGroupGeneric",
@@ -1461,6 +1525,13 @@ function(epsilon, n, q, classes...)
         else
             Append(maximalSubgroups, C2SubgroupsOrthogonalGroupGeneric(epsilon, n, q));
         fi;
+    fi;
+    
+    if 3 in classes then
+        # Class C3 subgroups ######################################################
+        # Cf. Propositions 3.6.3 (n = 7), 3.7.5 (n = 8), 3.8.3 (n = 9), 
+        # 3.9.5 (n = 10), 3.10.3 (n = 11) and 3.11.7 (n = 12) in [BHR13]
+        Append(maximalSubgroups, C3SubgroupsOrthogonalGroupGeneric(epsilon, n, q));
     fi;
 
     if 5 in classes then

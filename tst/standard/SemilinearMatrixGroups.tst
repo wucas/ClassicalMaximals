@@ -58,4 +58,53 @@ gap> TestMatricesInducingGaloisGroupOfGFQToSOverGFQ(5, 3);
 gap> TestMatricesInducingGaloisGroupOfGFQToSOverGFQ(4, 3);
 
 #
+gap> TestGammaLMeetOmega := function(epsilon, d, q, s)
+>   local G;
+>   G := GammaLMeetOmega(epsilon, d, q, s);
+>   CheckIsSubsetOmega(epsilon, d, q, G);
+>   CheckSize(G);
+> end;;
+gap> TestGammaLMeetOmega(0, 9, 7, 3);
+gap> TestGammaLMeetOmega(0, 15, 3, 3);
+gap> TestGammaLMeetOmega(0, 15, 3, 5);
+gap> TestGammaLMeetOmega(1, 12, 3, 3);
+gap> TestGammaLMeetOmega(1, 12, 5, 3);
+gap> TestGammaLMeetOmega(1, 20, 3, 5);
+gap> TestGammaLMeetOmega(-1, 12, 3, 3);
+gap> TestGammaLMeetOmega(-1, 12, 5, 3);
+
+#
+gap> TestUnitarySemilinearOmega := function(d, q)
+>   local G;
+>   G := UnitarySemilinearOmega(d, q);
+>   CheckIsSubsetOmega((-1) ^ (d / 2), d, q, G);
+>   CheckSize(G);
+> end;;
+gap> TestUnitarySemilinearOmega(4, 5);
+gap> TestUnitarySemilinearOmega(4, 4);
+gap> TestUnitarySemilinearOmega(4, 7);
+gap> TestUnitarySemilinearOmega(6, 3);
+gap> TestUnitarySemilinearOmega(6, 4);
+gap> TestUnitarySemilinearOmega(6, 5);
+gap> TestUnitarySemilinearOmega(6, 8);
+
+#
+gap> TestOrthogonalSemilinearOmega := function(epsilon, epsilon1, d, q)
+>   local G;
+>   G := OrthogonalSemilinearOmega(epsilon, epsilon1, d, q);
+>   CheckIsSubsetOmega(epsilon, d, q, G);
+>   CheckSize(G);
+> end;;
+gap> TestOrthogonalSemilinearOmega(1, 0, 6, 3);
+#@if IsBound(CLASSICAL_MAXIMALS_RUN_BROKEN_TESTS)
+gap> TestOrthogonalSemilinearOmega(-1, 0, 6, 3); # FIXME: `with 2`
+#@fi
+gap> TestOrthogonalSemilinearOmega(1, 0, 6, 5);
+gap> TestOrthogonalSemilinearOmega(-1, 0, 6, 5);
+gap> TestOrthogonalSemilinearOmega(1, 1, 8, 7);
+gap> TestOrthogonalSemilinearOmega(-1, -1, 8, 7);
+gap> TestOrthogonalSemilinearOmega(1, 1, 8, 5);
+gap> TestOrthogonalSemilinearOmega(-1, -1, 8, 5);
+
+#
 gap> STOP_TEST("SemilinearMatrixGroups.tst", 0);

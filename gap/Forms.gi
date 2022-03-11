@@ -389,7 +389,7 @@ end);
 # comment above UnitaryForm).
 #
 # In general, this function should only be used if one can be sure that <G>
-# preserves a symplectic form (but one does not know which one).
+# preserves a bilinear form (but one does not know which one).
 InstallGlobalFunction("BilinearForm",
 function(G, type)
     local F, M, inverseTransposeM, counter, formMatrix, condition;
