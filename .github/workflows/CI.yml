@@ -11,14 +11,14 @@ jobs:
     name: ${{ matrix.gap-version }}
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/wucas/${{ matrix.gap-version }}
+      image: ghcr.io/wucas/${{ matrix.gap-version }}:latest
     # Don't run this twice on PRs for branches pushed to the same repository
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     strategy:
       fail-fast: false
       matrix:
         gap-version:
-          - master-minimal
+          - gap-master-minimal
 
     steps:
       - uses: actions/checkout@v3
