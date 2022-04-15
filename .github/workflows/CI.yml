@@ -8,21 +8,22 @@ on:
 jobs:
   # The CI test job
   test:
-    name: ${{ matrix.gap-branch }}
+    name: ${{ matrix.gap-version }}
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/wucas/${{ matrix.gap-version }}
     # Don't run this twice on PRs for branches pushed to the same repository
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     strategy:
       fail-fast: false
       matrix:
-        gap-branch:
+        gap-version:
           - master
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: gap-actions/setup-gap@v2
+      - uses: actions/checkout@v3
+      - uses: wucas/setup-gap@v3
         with:
-          GAPBRANCH: ${{ matrix.gap-branch }}
           GAP_PKGS_TO_CLONE: 'recog'
       - uses: gap-actions/build-pkg@v1
       - uses: gap-actions/run-pkg-tests@v2
