@@ -26,7 +26,7 @@ jobs:
         with:
           GAP_PKGS_TO_CLONE: 'recog'
       - uses: gap-actions/build-pkg@v1
-      - uses: gap-actions/run-pkg-tests@v2
+      - uses: wucas/run-pkg-tests@v3
       - uses: gap-actions/process-coverage@v2
       - uses: codecov/codecov-action@v2
 
