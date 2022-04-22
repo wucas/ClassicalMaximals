@@ -19,13 +19,21 @@ jobs:
       matrix:
         gap-version:
           - gap-master-minimal
+        GAP_PKGS_TO_CLONE: 
+          - 'recog forms genss orb FactInt'
+        GAP_PKGS_TO_DOWNLOAD: 
+          - 'http://www.math.rwth-aachen.de/homes/Thomas.Breuer/atlasrep/atlasrep-2.1.2.tar.gz'
+        include:
+          - gap-version: gap-master-full
+          - GAP_PKGS_TO_CLONE: ''
+          - GAP_PKGS_TO_DOWNLOAD: ''
 
     steps:
       - uses: actions/checkout@v3
       - uses: wucas/setup-gap@v3
         with:
-          GAP_PKGS_TO_CLONE: 'recog forms genss orb FactInt'
-          GAP_PKGS_TO_DOWNLOAD: 'http://www.math.rwth-aachen.de/homes/Thomas.Breuer/atlasrep/atlasrep-2.1.2.tar.gz'
+          GAP_PKGS_TO_CLONE: ${{matrix.GAP_PKGS_TO_CLONE}}
+          GAP_PKGS_TO_DOWNLOAD: ${{matrix.GAP_PKGS_TO_DOWNLOAD}}
       - uses: gap-actions/build-pkg@v1
       - uses: wucas/run-pkg-tests@v3
       - uses: gap-actions/process-coverage@v2
