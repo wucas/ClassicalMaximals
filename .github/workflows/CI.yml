@@ -34,7 +34,7 @@ jobs:
         with:
           GAP_PKGS_TO_CLONE: ${{matrix.GAP_PKGS_TO_CLONE}}
           GAP_PKGS_TO_DOWNLOAD: ${{matrix.GAP_PKGS_TO_DOWNLOAD}}
-      - uses: gap-actions/build-pkg@v1
+      - uses: gap-actions/build-pkg@v2
       - uses: wucas/run-pkg-tests@v3
       - uses: gap-actions/process-coverage@v2
       - uses: codecov/codecov-action@v2
